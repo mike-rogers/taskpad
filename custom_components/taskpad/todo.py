@@ -58,6 +58,11 @@ class TaskPadTodoList(TodoListEntity):
         )
 
     @property
+    def extra_state_attributes(self) -> dict:
+        # Consumed by the taskpad-card frontend.
+        return {"tasks": self._manager.task_attributes()}
+
+    @property
     def todo_items(self) -> list[TodoItem]:
         items = []
         for stored in self._manager.items:

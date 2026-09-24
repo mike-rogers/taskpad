@@ -50,6 +50,21 @@ Firmware: unchanged.
       items distinctly
 - [x] History log records blocked/unblocked transitions
 
+## M2.5 — Task editor: typed services + custom card
+
+- [ ] Structured periodicity stored as value + unit (days/weeks/months);
+      per-task dependency text (`prep_text`) used as the spawned prep item's
+      name; storage migration from interval_days-only items
+- [ ] Services with typed selectors: `taskpad.add_task` (name, first due
+      date defaulting to today + period, value + unit, dependency text),
+      `taskpad.update_task`, `taskpad.block`
+- [ ] Task metadata exposed as `todo.taskpad` attributes for the frontend
+- [ ] `custom:taskpad-card` (vanilla JS, served + auto-registered by the
+      integration): task list with urgency colors, blocked/prep rendering,
+      complete/block/edit buttons, and a create/edit form with the fields
+      above, prefilled on edit
+- [ ] Legacy `interval:` description parsing retained as fallback input
+
 ## M3 — Discovery & adoption
 
 - [ ] Firmware: mDNS advertisement (`_taskpad._tcp`, TXT: id + version) and

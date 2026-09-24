@@ -12,3 +12,102 @@ complete:
       example: "Change furnace air filter"
       selector:
         text:
+
+block:
+  name: Block a task
+  description: >-
+    Marks a chore blocked and spawns its dependency task (from the chore's
+    dependency text) due today.
+  fields:
+    task:
+      name: Task
+      description: The to-do item's name or uid.
+      required: true
+      example: "Give the dog flea medication"
+      selector:
+        text:
+
+add_task:
+  name: Add a task
+  description: Creates a new periodic chore.
+  fields:
+    name:
+      name: Name
+      required: true
+      example: "Change furnace air filter"
+      selector:
+        text:
+    due:
+      name: First due date
+      required: true
+      selector:
+        date:
+    interval_value:
+      name: Repeat every
+      required: true
+      example: 3
+      selector:
+        number:
+          min: 1
+          max: 3650
+          mode: box
+    interval_unit:
+      name: Unit
+      required: true
+      selector:
+        select:
+          options:
+            - days
+            - weeks
+            - months
+    prep_text:
+      name: Dependency task
+      description: >-
+        Name of the one-shot prerequisite spawned when this chore is marked
+        blocked (device long-press or taskpad.block).
+      required: false
+      example: "Call vet and pick up flea meds"
+      selector:
+        text:
+
+update_task:
+  name: Update a task
+  description: Edits a chore's fields; omitted fields are left unchanged.
+  fields:
+    uid:
+      name: Task uid
+      required: true
+      selector:
+        text:
+    name:
+      name: Name
+      required: false
+      selector:
+        text:
+    due:
+      name: Due date
+      required: false
+      selector:
+        date:
+    interval_value:
+      name: Repeat every
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 3650
+          mode: box
+    interval_unit:
+      name: Unit
+      required: false
+      selector:
+        select:
+          options:
+            - days
+            - weeks
+            - months
+    prep_text:
+      name: Dependency task
+      required: false
+      selector:
+        text:

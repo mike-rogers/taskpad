@@ -33,6 +33,7 @@ from .const import (
     STATUS_NEEDS_ACTION,
     STORAGE_KEY,
     STORAGE_VERSION,
+    UNIT_TO_DAYS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,6 +65,14 @@ class TaskPadManager:
     async def async_load(self) -> None:
         data = await self._store.async_load()
         self.items = (data or {}).get("items", [])
+        # Migrate items from before structured value/unit and prep_text.
+        for item in self.items:
+            if "interval_value" not in item:
+                item["interval_value"] = item.get("interval_days") or (
+                    self.default_interval
+                )
+                item["interval_unit"] = "days"
+            item.setdefault("prep_text", "")
 
     async def _async_save_and_notify(self) -> None:
         await self._store.async_save({"items": self.items})
@@ -138,29 +147,49 @@ class TaskPadManager:
     def get(self, uid: str) -> dict[str, Any] | None:
         return next((i for i in self.items if i["uid"] == uid), None)
 
-    def _parse_interval(self, description: str | None) -> int | None:
+    def _parse_interval(self, description: str | None) -> tuple[int, str] | None:
+        """Legacy 'interval: N[dwmy]' in a description -> (value, unit)."""
         if not description:
             return None
         match = re.search(INTERVAL_PATTERN, description, re.IGNORECASE)
         if not match:
             return None
-        return int(match.group(1)) * INTERVAL_UNIT_DAYS[match.group(2).lower()]
+        value = int(match.group(1))
+        char = match.group(2).lower()
+        if char == "y":
+            return (value * 365, "days")
+        return (value, {"": "days", "d": "days", "w": "weeks", "m": "months"}[char])
+
+    @staticmethod
+    def _interval_days(value: int, unit: str) -> int:
+        return int(value) * UNIT_TO_DAYS.get(unit, 1)
 
     def _new_item(
-        self, summary: str, due: str | None, description: str
+        self,
+        summary: str,
+        due: str | None,
+        description: str,
+        *,
+        interval_value: int | None = None,
+        interval_unit: str = "days",
+        prep_text: str = "",
     ) -> dict[str, Any]:
-        interval = self._parse_interval(description)
-        if interval is None:
-            interval = self.default_interval
-            suffix = f"interval: {interval}"
-            description = f"{description}\n{suffix}" if description else suffix
+        if interval_value is None:
+            parsed = self._parse_interval(description)
+            if parsed is not None:
+                interval_value, interval_unit = parsed
+            else:
+                interval_value, interval_unit = self.default_interval, "days"
         return {
             "uid": str(uuid.uuid4()),
             "summary": summary,
             "status": STATUS_NEEDS_ACTION,
             "due": due,  # "YYYY-MM-DD" or None
             "description": description,
-            "interval_days": interval,
+            "interval_value": int(interval_value),
+            "interval_unit": interval_unit,
+            "interval_days": self._interval_days(interval_value, interval_unit),
+            "prep_text": prep_text or "",
             "created_at": dt_util.now().isoformat(),
             "completed_at": None,
         }
@@ -194,7 +223,59 @@ class TaskPadManager:
         item["status"] = status
         parsed = self._parse_interval(description)
         if parsed is not None:
-            item["interval_days"] = parsed
+            item["interval_value"], item["interval_unit"] = parsed
+            item["interval_days"] = self._interval_days(*parsed)
+        await self._async_save_and_notify()
+
+    # ------------------------------------------------------------------
+    # Typed create/edit used by the taskpad services and the custom card
+
+    async def async_add_task(
+        self,
+        name: str,
+        due: str,
+        interval_value: int,
+        interval_unit: str,
+        prep_text: str,
+    ) -> dict[str, Any]:
+        item = self._new_item(
+            name,
+            due,
+            "",
+            interval_value=interval_value,
+            interval_unit=interval_unit,
+            prep_text=prep_text,
+        )
+        self.items.append(item)
+        await self._async_save_and_notify()
+        return item
+
+    async def async_update_task(
+        self,
+        uid: str,
+        name: str | None = None,
+        due: str | None = None,
+        interval_value: int | None = None,
+        interval_unit: str | None = None,
+        prep_text: str | None = None,
+    ) -> None:
+        item = self.get(uid)
+        if item is None:
+            _LOGGER.warning("update_task for unknown uid %s", uid)
+            return
+        if name is not None:
+            item["summary"] = name
+        if due is not None:
+            item["due"] = due
+        if interval_value is not None:
+            item["interval_value"] = int(interval_value)
+        if interval_unit is not None:
+            item["interval_unit"] = interval_unit
+        item["interval_days"] = self._interval_days(
+            item["interval_value"], item["interval_unit"]
+        )
+        if prep_text is not None:
+            item["prep_text"] = prep_text
         await self._async_save_and_notify()
 
     async def async_delete(self, uids: list[str]) -> None:
@@ -283,8 +364,14 @@ class TaskPadManager:
 
         interval = int(item.get("interval_days") or self.default_interval)
         next_due = (now.date() + timedelta(days=interval)).isoformat()
-        successor = self._new_item(item["summary"], next_due, item["description"])
-        successor["interval_days"] = interval
+        successor = self._new_item(
+            item["summary"],
+            next_due,
+            item["description"],
+            interval_value=item.get("interval_value") or interval,
+            interval_unit=item.get("interval_unit") or "days",
+            prep_text=item.get("prep_text") or "",
+        )
         self.items.append(successor)
 
         await self._async_save_and_notify()
@@ -330,11 +417,14 @@ class TaskPadManager:
         now = dt_util.now()
         prep = {
             "uid": str(uuid.uuid4()),
-            "summary": f"Prep: {item['summary']}",
+            "summary": item.get("prep_text") or f"Prep: {item['summary']}",
             "status": STATUS_NEEDS_ACTION,
             "due": now.date().isoformat(),
             "description": f"One-shot prerequisite for: {item['summary']}",
             "interval_days": None,
+            "interval_value": 1,
+            "interval_unit": "days",
+            "prep_text": "",
             "one_shot": True,
             "parent_uid": item["uid"],
             "created_at": now.isoformat(),
@@ -357,6 +447,29 @@ class TaskPadManager:
             },
         )
         return prep
+
+    # ------------------------------------------------------------------
+    # Metadata for the entity attributes / custom card
+
+    def task_attributes(self) -> list[dict[str, Any]]:
+        open_items = [
+            i for i in self.items if i["status"] == STATUS_NEEDS_ACTION
+        ]
+        open_items.sort(key=lambda i: i["due"] or "9999-99-99")
+        return [
+            {
+                "uid": i["uid"],
+                "name": i["summary"],
+                "due": i["due"],
+                "interval_value": i.get("interval_value"),
+                "interval_unit": i.get("interval_unit"),
+                "prep_text": i.get("prep_text") or "",
+                "blocked": bool(i.get("blocked")),
+                "prep": bool(i.get("one_shot")),
+                "parent_uid": i.get("parent_uid"),
+            }
+            for i in open_items
+        ]
 
     # ------------------------------------------------------------------
     # MQTT

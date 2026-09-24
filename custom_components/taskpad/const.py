@@ -18,7 +18,15 @@ STORAGE_VERSION = 1
 STORAGE_KEY = "taskpad.tasks"
 
 SERVICE_COMPLETE = "complete"
+SERVICE_BLOCK = "block"
+SERVICE_ADD_TASK = "add_task"
+SERVICE_UPDATE_TASK = "update_task"
 ATTR_TASK = "task"
+
+INTERVAL_UNITS = ["days", "weeks", "months"]
+UNIT_TO_DAYS = {"days": 1, "weeks": 7, "months": 30}
+
+CARD_URL = "/taskpad_files/taskpad-card.js"
 
 # "interval: 90" / "interval: 2w" / "interval: 3m" / "interval: 1y"
 INTERVAL_PATTERN = r"interval:\s*(\d+)\s*([dwmy]?)"

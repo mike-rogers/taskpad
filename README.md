@@ -95,6 +95,14 @@ completion-relative rescheduling and history log, a `taskpad.complete`
 service, and a `taskpad_completed` event. Ticking the checkbox on the
 To-do card runs the full completion flow (unlike the package setup).
 
+The integration also serves a dashboard card: add a card of type
+`custom:taskpad-card` to any dashboard for the full editor — task list
+with urgency colors, complete/block/edit buttons, and a create/edit form
+(name, first due date, periodicity value + days/weeks/months, and the
+dependency task spawned on long-press). The same operations exist as
+typed services (`taskpad.add_task`, `taskpad.update_task`,
+`taskpad.block`, `taskpad.complete`) for automations and Developer Tools.
+
 Install: copy the folder to `custom_components/taskpad/` in the HA config
 directory, restart HA, then Settings → Devices & Services → Add
 integration → TaskPad. Use the import field to pull your open items from

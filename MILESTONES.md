@@ -11,29 +11,29 @@ permanent history log via the File integration, MQTT discovery device.
 Working: button → todo close-out → successor → history line → display
 refresh.
 
-## M1 — Custom integration core
+## M1 — Custom integration core (done, 2026-09-24)
 
 Replace the YAML package, Local to-do, and File integration with
 `custom_components/taskpad/`:
 
-- [ ] Integration-owned `todo.taskpad` entity backed by `.storage`
+- [x] Integration-owned `todo.taskpad` entity backed by `.storage`
       (structured `interval_days` per item instead of description-string
       parsing being the source of truth; `interval: N[d|w|m|y]` in the
       description remains the input method from the To-do card)
-- [ ] Config flow (topic prefix, log path, default interval) + options flow
-- [ ] MQTT: subscribe `taskpad/complete` directly, publish retained
+- [x] Config flow (topic prefix, log path, default interval) + options flow
+- [x] MQTT: subscribe `taskpad/complete` directly, publish retained
       `taskpad/tasks` on every change (no automations)
-- [ ] Completion logic in Python: close item, create successor at
+- [x] Completion logic in Python: close item, create successor at
       completion date + interval, append history line, fire
       `taskpad_completed` bus event (logbook visibility)
-- [ ] Ticking the checkbox in the To-do card triggers the SAME completion
+- [x] Ticking the checkbox in the To-do card triggers the SAME completion
       flow (the entity intercepts the status change — the old "don't touch
       the checkbox" rule dies here)
-- [ ] `taskpad.complete` service (name or uid)
-- [ ] One-time import from the existing Local to-do list
-- [ ] Clean uninstall: `async_remove_entry` deletes storage and clears the
+- [x] `taskpad.complete` service (name or uid)
+- [x] One-time import from the existing Local to-do list
+- [x] Clean uninstall: `async_remove_entry` deletes storage and clears the
       retained tasks topic
-- [ ] Migration: after verification, remove the package automations/script
+- [x] Migration: after verification, remove the package automations/script
       and the Local to-do list
 
 Firmware: unchanged.

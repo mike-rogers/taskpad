@@ -86,7 +86,7 @@ appended to a permanent log file, `/config/taskpad_history.log`.
    `interval: 2w`, `interval: 3m`, or `interval: 1y`. Anything missing or
    unparseable falls back to 30 days.
 
-## Custom integration (M1, replaces the package — being verified)
+## Custom integration (replaces the package)
 
 `custom_components/taskpad/` supersedes the YAML package, Local to-do, and
 File integration: an integration-owned `todo.taskpad` entity with
@@ -100,8 +100,11 @@ directory, restart HA, then Settings → Devices & Services → Add
 integration → TaskPad. Use the import field to pull your open items from
 the existing list, then delete the old Local to-do list and remove the
 package's `script:`/`automation:` blocks (double handlers = double
-successors). The setup steps below describe the pre-integration package
-and remain valid as a fallback.
+successors). Tip: the Samba share app makes copying the folder a
+drag-and-drop from a mounted network share.
+
+The package setup steps below describe the pre-integration architecture;
+they're kept as documentation of the fallback path, not required setup.
 
 ## Build & flash
 

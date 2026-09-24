@@ -1,0 +1,158 @@
+# TaskPad — Home Assistant package (to-do list backend)
+#
+# One-time setup, in this order (see README.md for the full walkthrough):
+#   1. In configuration.yaml, extend the homeassistant block:
+#        homeassistant:
+#          packages: !include_dir_named packages
+#          allowlist_external_dirs:
+#            - /config
+#      The allowlist must be in place, and HA restarted, before step 4 —
+#      the File integration validates the path when you add it.
+#   2. Save this file as packages/taskpad.yaml (create the packages folder
+#      with File Editor's New Folder button first — naming a file with a
+#      path does not create the folder).
+#   3. Check configuration (Developer Tools -> YAML), then restart HA.
+#   4. Settings -> Devices & Services -> Add integration:
+#      - "Local to-do": create a list named "TaskPad" (entity id:
+#        todo.taskpad — this package references that id throughout; adjust
+#        here if yours differs).
+#      - "File": notification service, file path
+#        /config/taskpad_history.log with timestamps enabled. It creates a
+#        generically-named entity (notify.file); rename its entity id to
+#        notify.taskpad_history via the entity's settings (gear icon).
+#
+# Using it:
+#   - Add a chore on the To-do sidebar page: name, due date, and the repeat
+#     interval in the description — "interval: 90" (days), "interval: 2w",
+#     "interval: 3m", "interval: 1y". Missing or unparseable intervals fall
+#     back to 30 days.
+#   - Complete a chore from the device, or in HA by running
+#     script.taskpad_complete. Avoid ticking the checkbox on the To-do page
+#     directly: that completes the item without scheduling the next
+#     occurrence or writing the history line.
+#   - Rescheduling is completion-relative: the completed item is closed out
+#     (it remains in the completed pile as a visual record) and a fresh item
+#     is created due today + interval.
+#   - The durable record is /config/taskpad_history.log: one timestamped
+#     line per completion, immune to recorder purging.
+
+script:
+  taskpad_complete:
+    alias: "TaskPad: complete a task"
+    description: >-
+      Completes a chore: closes the matching to-do item, creates its
+      successor due today + interval (parsed from the item description),
+      and appends a line to the history log.
+    mode: queued
+    fields:
+      task:
+        description: "To-do item name or uid"
+        required: true
+        example: "Change furnace air filter"
+    sequence:
+      - action: todo.get_items
+        target:
+          entity_id: todo.taskpad
+        data:
+          status: needs_action
+        response_variable: result
+      - variables:
+          items: "{{ result['todo.taskpad']['items'] | default([]) }}"
+          matched: >-
+            {{ (items | selectattr('uid', 'eq', task) | list)
+               + (items | selectattr('summary', 'eq', task) | list) }}
+      - condition: template
+        value_template: "{{ matched | count > 0 }}"
+      - variables:
+          item: "{{ matched[0] }}"
+          interval_days: >-
+            {% set m = (item.description | default('', true) | string)
+               | regex_findall('(?i)interval:\\s*(\\d+)\\s*([dwmy]?)') %}
+            {% if m %}
+              {% set mult = {'': 1, 'd': 1, 'w': 7, 'm': 30, 'y': 365}[m[0][1] | lower] %}
+              {{ (m[0][0] | int) * mult }}
+            {% else %}
+              30
+            {% endif %}
+      - variables:
+          next_due: "{{ (now() + timedelta(days=interval_days | int)).strftime('%Y-%m-%d') }}"
+      - action: todo.update_item
+        target:
+          entity_id: todo.taskpad
+        data:
+          item: "{{ item.uid }}"
+          status: completed
+      - action: todo.add_item
+        target:
+          entity_id: todo.taskpad
+        data:
+          item: "{{ item.summary }}"
+          due_date: "{{ next_due }}"
+          description: "{{ item.description | default('', true) }}"
+      - action: notify.send_message
+        continue_on_error: true
+        target:
+          entity_id: notify.taskpad_history
+        data:
+          message: >-
+            completed: {{ item.summary }} (next due {{ next_due }},
+            interval {{ interval_days }}d)
+
+automation:
+  - id: taskpad_publish_tasks
+    alias: "TaskPad: publish task list to MQTT"
+    description: >-
+      Keeps the retained taskpad/tasks topic in sync so the device always
+      has the current list, including immediately after it (re)connects.
+      The hourly trigger catches due-date edits, which don't change the
+      item count and therefore don't fire the state trigger.
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: todo.taskpad
+      - trigger: time_pattern
+        minutes: "5"
+      - trigger: homeassistant
+        event: start
+    actions:
+      - action: todo.get_items
+        target:
+          entity_id: todo.taskpad
+        data:
+          status: needs_action
+        response_variable: result
+      - action: mqtt.publish
+        data:
+          topic: taskpad/tasks
+          retain: true
+          payload: >-
+            {% set items = result['todo.taskpad']['items'] | default([]) %}
+            {% set ns = namespace(out=[]) %}
+            {% for i in items if i.due is defined %}
+              {% set ns.out = ns.out + [{
+                   'id': i.uid,
+                   'name': i.summary,
+                   'due': (i.due | string)[:10]
+                 }] %}
+            {% endfor %}
+            {{ ns.out | sort(attribute='due') | to_json }}
+
+  - id: taskpad_handle_complete
+    alias: "TaskPad: handle completion from device"
+    description: >-
+      Triggers on the device's MQTT-discovery "Last completed task" sensor
+      (which subscribes to taskpad/complete) instead of a direct MQTT
+      trigger — on HA 2026.9 the automation MQTT trigger silently failed to
+      subscribe, while the discovery sensor demonstrably receives every
+      message.
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: sensor.taskpad_last_completed_task
+        not_to:
+          - unknown
+          - unavailable
+    actions:
+      - action: script.taskpad_complete
+        data:
+          task: "{{ trigger.to_state.state }}"

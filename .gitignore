@@ -1,0 +1,10 @@
+build/
+managed_components/
+__pycache__/
+# CLion
+cmake-build-*/
+.idea/
+dependencies.lock
+# sdkconfig holds Wi-Fi credentials and the HA token -- keep it out of git
+sdkconfig
+sdkconfig.old

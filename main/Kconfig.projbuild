@@ -1,0 +1,87 @@
+menu "TaskPad Configuration"
+
+    config TASKPAD_WIFI_SSID
+        string "Wi-Fi SSID"
+        default ""
+
+    config TASKPAD_WIFI_PASSWORD
+        string "Wi-Fi password"
+        default ""
+
+    config TASKPAD_MQTT_URI
+        string "MQTT broker URI"
+        default "mqtt://192.168.1.100:1883"
+        help
+            The Mosquitto add-on listens on port 1883 of the HA host.
+            Use an IP address or a real hostname; .local mDNS names do
+            not resolve without adding the espressif/mdns component.
+
+    config TASKPAD_MQTT_USERNAME
+        string "MQTT username"
+        default ""
+        help
+            With the Mosquitto add-on, any Home Assistant user works;
+            best practice is a dedicated 'taskpad' user.
+
+    config TASKPAD_MQTT_PASSWORD
+        string "MQTT password"
+        default ""
+
+    config TASKPAD_HORIZON_DAYS
+        int "Show tasks due within this many days"
+        default 14
+        range 1 365
+        help
+            Tasks further out than this are hidden until they get close.
+            Overdue tasks are always shown.
+
+    config TASKPAD_TZ
+        string "POSIX TZ string"
+        default "EST5EDT,M3.2.0,M11.1.0"
+        help
+            Used for local-time due-date math. Default is US Eastern.
+
+    menu "Pins"
+
+        config TASKPAD_PIN_SCLK
+            int "LCD SCLK (SCL/SCK)"
+            default 6
+
+        config TASKPAD_PIN_MOSI
+            int "LCD MOSI (SDA)"
+            default 7
+
+        config TASKPAD_PIN_CS
+            int "LCD CS (-1 if tied low)"
+            range -1 21
+            default 10
+
+        config TASKPAD_PIN_DC
+            int "LCD DC"
+            default 4
+
+        config TASKPAD_PIN_RST
+            int "LCD RST (-1 if not wired)"
+            range -1 21
+            default 5
+
+        config TASKPAD_PIN_BACKLIGHT
+            int "LCD backlight (-1 if tied high)"
+            range -1 21
+            default 3
+
+        config TASKPAD_PIN_BTN_DONE
+            int "'Done' button GPIO (to GND)"
+            default 1
+
+        config TASKPAD_PIN_BTN_DOWN
+            int "'Down' button GPIO (BOOT = 9)"
+            default 9
+
+    endmenu
+
+    config TASKPAD_LCD_INVERT
+        bool "Invert LCD colors (typical for IPS ST7789 panels)"
+        default y
+
+endmenu

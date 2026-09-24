@@ -38,17 +38,17 @@ Replace the YAML package, Local to-do, and File integration with
 
 Firmware: unchanged.
 
-## M2 — Blocked / prerequisite tasks
+## M2 — Blocked / prerequisite tasks (done, 2026-09-24)
 
-- [ ] Firmware: long-press detection on Done (and later the ANO center
+- [x] Firmware: long-press detection on Done (and later the ANO center
       button); publishes `{"task_id": ...}` to `taskpad/blocked`
-- [ ] Integration: creates a linked one-shot prep item ("Prep: <name>", due
+- [x] Integration: creates a linked one-shot prep item ("Prep: <name>", due
       today, no interval), marks the parent blocked, stores the link by uid
-- [ ] Completing the prep item auto-unblocks the parent; completing the
+- [x] Completing the prep item auto-unblocks the parent; completing the
       parent directly auto-closes the orphaned prep item
-- [ ] Published task list gains a `blocked` flag; device renders blocked
+- [x] Published task list gains a `blocked` flag; device renders blocked
       items distinctly
-- [ ] History log records blocked/unblocked transitions
+- [x] History log records blocked/unblocked transitions
 
 ## M3 — Discovery & adoption
 

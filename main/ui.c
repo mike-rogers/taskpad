@@ -219,11 +219,13 @@ void ui_show_tasks(const task_item_t *tasks, size_t count, size_t selected)
         lv_obj_set_style_text_color(name, name_color, 0);
         lv_obj_align(name, LV_ALIGN_TOP_LEFT, 0, 0);
 
+        // Blocked rows get parentheses; the built-in fonts lack the
+        // FontAwesome symbol glyphs, so plain ASCII it is.
         char buf[24];
         if (t->blocked) {
             char days_buf[16];
             days_text(t->days_left, days_buf, sizeof(days_buf));
-            snprintf(buf, sizeof(buf), LV_SYMBOL_PAUSE " %s", days_buf);
+            snprintf(buf, sizeof(buf), "(%s)", days_buf);
         } else {
             days_text(t->days_left, buf, sizeof(buf));
         }

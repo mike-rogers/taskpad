@@ -191,7 +191,11 @@ void ui_show_tasks(const task_item_t *tasks, size_t count, size_t selected)
 
     for (size_t i = 0; i < count; i++) {
         const task_item_t *t = &tasks[i];
-        lv_color_t color = urgency_color(t->days_left);
+        // Blocked tasks render muted: they're waiting on their prep task.
+        lv_color_t color = t->blocked ? lv_color_hex(0x546E7A)
+                                      : urgency_color(t->days_left);
+        lv_color_t name_color = t->blocked ? lv_color_hex(0x90A4AE)
+                                           : lv_color_hex(0xECEFF1);
 
         lv_obj_t *row = lv_obj_create(s_list);
         lv_obj_set_size(row, LV_PCT(100), 56);
@@ -212,11 +216,17 @@ void ui_show_tasks(const task_item_t *tasks, size_t count, size_t selected)
         lv_label_set_text(name, t->name);
         lv_obj_set_size(name, 145, 40);
         lv_obj_set_style_text_font(name, &lv_font_montserrat_16, 0);
-        lv_obj_set_style_text_color(name, lv_color_hex(0xECEFF1), 0);
+        lv_obj_set_style_text_color(name, name_color, 0);
         lv_obj_align(name, LV_ALIGN_TOP_LEFT, 0, 0);
 
-        char buf[16];
-        days_text(t->days_left, buf, sizeof(buf));
+        char buf[24];
+        if (t->blocked) {
+            char days_buf[16];
+            days_text(t->days_left, days_buf, sizeof(days_buf));
+            snprintf(buf, sizeof(buf), LV_SYMBOL_PAUSE " %s", days_buf);
+        } else {
+            days_text(t->days_left, buf, sizeof(buf));
+        }
         lv_obj_t *days = lv_label_create(row);
         lv_label_set_text(days, buf);
         lv_obj_set_style_text_font(days, &lv_font_montserrat_20, 0);

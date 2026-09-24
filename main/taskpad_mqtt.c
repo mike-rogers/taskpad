@@ -17,6 +17,7 @@ static const char *TAG = "taskpad_mqtt";
 
 #define TOPIC_TASKS "taskpad/tasks"
 #define TOPIC_COMPLETE "taskpad/complete"
+#define TOPIC_BLOCKED "taskpad/blocked"
 #define TOPIC_AVAIL "taskpad/availability"
 
 #define TASKS_PAYLOAD_MAX 8192
@@ -115,6 +116,7 @@ static void parse_tasks(const char *json)
         snprintf(item->name, sizeof(item->name), "%s", name->valuestring);
         snprintf(item->due, sizeof(item->due), "%s", due->valuestring);
         item->days_left = 0; // computed at read time
+        item->blocked = cJSON_IsTrue(cJSON_GetObjectItem(t, "blocked"));
     }
     cJSON_Delete(root);
 
@@ -226,13 +228,22 @@ size_t taskpad_mqtt_get_tasks(task_item_t *out, size_t max)
     return n;
 }
 
-esp_err_t taskpad_mqtt_publish_complete(const char *task_id)
+static esp_err_t publish_task_id(const char *topic, const char *task_id)
 {
     char body[80];
     snprintf(body, sizeof(body), "{\"task_id\":\"%s\"}", task_id);
-    int msg_id = esp_mqtt_client_publish(s_client, TOPIC_COMPLETE, body, 0, 1,
-                                         false);
-    ESP_LOGI(TAG, "completion publish %s: %s (msg_id=%d)",
+    int msg_id = esp_mqtt_client_publish(s_client, topic, body, 0, 1, false);
+    ESP_LOGI(TAG, "publish to %s %s: %s (msg_id=%d)", topic,
              msg_id >= 0 ? "enqueued" : "FAILED", body, msg_id);
     return msg_id >= 0 ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t taskpad_mqtt_publish_complete(const char *task_id)
+{
+    return publish_task_id(TOPIC_COMPLETE, task_id);
+}
+
+esp_err_t taskpad_mqtt_publish_blocked(const char *task_id)
+{
+    return publish_task_id(TOPIC_BLOCKED, task_id);
 }

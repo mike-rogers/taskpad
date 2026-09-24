@@ -25,6 +25,7 @@ from .const import (
     DEFAULT_INTERVAL_DAYS,
     DEFAULT_LOG_FILENAME,
     DEFAULT_TOPIC_PREFIX,
+    EVENT_BLOCKED,
     EVENT_COMPLETED,
     INTERVAL_PATTERN,
     INTERVAL_UNIT_DAYS,
@@ -55,7 +56,7 @@ class TaskPadManager:
         self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self.items: list[dict[str, Any]] = []
         self._listeners: list[Callable[[], None]] = []
-        self._unsubscribe: Callable[[], None] | None = None
+        self._unsubscribers: list[Callable[[], None]] = []
 
     # ------------------------------------------------------------------
     # Persistence and change notification
@@ -85,17 +86,25 @@ class TaskPadManager:
     async def async_start(self) -> None:
         if self.entry.data.get(CONF_IMPORT_ENTITY) and not self.items:
             await self._async_import(self.entry.data[CONF_IMPORT_ENTITY])
-        self._unsubscribe = await mqtt.async_subscribe(
-            self.hass,
-            f"{self.topic_prefix}/complete",
-            self._async_handle_complete_msg,
+        self._unsubscribers.append(
+            await mqtt.async_subscribe(
+                self.hass,
+                f"{self.topic_prefix}/complete",
+                self._async_handle_complete_msg,
+            )
+        )
+        self._unsubscribers.append(
+            await mqtt.async_subscribe(
+                self.hass,
+                f"{self.topic_prefix}/blocked",
+                self._async_handle_blocked_msg,
+            )
         )
         await self.async_publish_tasks()
 
     async def async_stop(self) -> None:
-        if self._unsubscribe is not None:
-            self._unsubscribe()
-            self._unsubscribe = None
+        while self._unsubscribers:
+            self._unsubscribers.pop()()
 
     # ------------------------------------------------------------------
     # Import from an existing to-do entity (one-time)
@@ -190,8 +199,30 @@ class TaskPadManager:
 
     async def async_delete(self, uids: list[str]) -> None:
         remove = set(uids)
+        parents_affected = {
+            i["parent_uid"]
+            for i in self.items
+            if i["uid"] in remove and i.get("parent_uid")
+        }
         self.items = [i for i in self.items if i["uid"] not in remove]
+        # Deleting a prep task unblocks its parent if no other open prep remains.
+        for parent_uid in parents_affected:
+            parent = self.get(parent_uid)
+            if (
+                parent is not None
+                and parent.get("blocked")
+                and not self._open_preps(parent_uid)
+            ):
+                parent["blocked"] = False
         await self._async_save_and_notify()
+
+    def _open_preps(self, parent_uid: str) -> list[dict[str, Any]]:
+        return [
+            i
+            for i in self.items
+            if i.get("parent_uid") == parent_uid
+            and i["status"] == STATUS_NEEDS_ACTION
+        ]
 
     # ------------------------------------------------------------------
     # Completion: close item, create successor, log, fire event
@@ -214,6 +245,42 @@ class TaskPadManager:
         item["status"] = STATUS_COMPLETED
         item["completed_at"] = now.isoformat()
 
+        # A prep task is one-shot: no successor; completing it unblocks its
+        # parent (if the parent is still open).
+        if item.get("one_shot"):
+            note = ""
+            parent = self.get(item.get("parent_uid") or "")
+            if (
+                parent is not None
+                and parent["status"] == STATUS_NEEDS_ACTION
+                and parent.get("blocked")
+                and not self._open_preps(parent["uid"])
+            ):
+                parent["blocked"] = False
+                note = f"; unblocked: {parent['summary']}"
+            await self._async_save_and_notify()
+            await self._async_log(
+                f"completed prep: {item['summary']} (via {source}){note}"
+            )
+            self.hass.bus.async_fire(
+                EVENT_COMPLETED,
+                {
+                    "uid": item["uid"],
+                    "summary": item["summary"],
+                    "next_due": None,
+                    "prep": True,
+                    "source": source,
+                },
+            )
+            return None
+
+        # Completing a blocked parent directly closes its orphaned prep tasks.
+        closed_preps = ""
+        for prep in self._open_preps(item["uid"]):
+            prep["status"] = STATUS_COMPLETED
+            prep["completed_at"] = now.isoformat()
+            closed_preps = f"; auto-closed prep: {prep['summary']}"
+
         interval = int(item.get("interval_days") or self.default_interval)
         next_due = (now.date() + timedelta(days=interval)).isoformat()
         successor = self._new_item(item["summary"], next_due, item["description"])
@@ -224,6 +291,7 @@ class TaskPadManager:
         await self._async_log(
             f"completed: {item['summary']}"
             f" (next due {next_due}, interval {interval}d, via {source})"
+            f"{closed_preps}"
         )
         self.hass.bus.async_fire(
             EVENT_COMPLETED,
@@ -237,15 +305,76 @@ class TaskPadManager:
         return successor
 
     # ------------------------------------------------------------------
+    # Blocking: create a linked one-shot prep task
+
+    async def async_block(self, task: str, source: str) -> dict[str, Any] | None:
+        item = next(
+            (
+                i
+                for i in self.items
+                if i["status"] == STATUS_NEEDS_ACTION
+                and task in (i["uid"], i["summary"])
+            ),
+            None,
+        )
+        if item is None:
+            _LOGGER.warning("Block for unknown task %r (source: %s)", task, source)
+            return None
+        if item.get("one_shot"):
+            _LOGGER.warning("Refusing to block prep task %r", item["summary"])
+            return None
+        if item.get("blocked") and self._open_preps(item["uid"]):
+            _LOGGER.debug("Task %r already blocked", item["summary"])
+            return None
+
+        now = dt_util.now()
+        prep = {
+            "uid": str(uuid.uuid4()),
+            "summary": f"Prep: {item['summary']}",
+            "status": STATUS_NEEDS_ACTION,
+            "due": now.date().isoformat(),
+            "description": f"One-shot prerequisite for: {item['summary']}",
+            "interval_days": None,
+            "one_shot": True,
+            "parent_uid": item["uid"],
+            "created_at": now.isoformat(),
+            "completed_at": None,
+        }
+        self.items.append(prep)
+        item["blocked"] = True
+
+        await self._async_save_and_notify()
+        await self._async_log(
+            f"blocked: {item['summary']} -> created prep task (via {source})"
+        )
+        self.hass.bus.async_fire(
+            EVENT_BLOCKED,
+            {
+                "uid": item["uid"],
+                "summary": item["summary"],
+                "prep_uid": prep["uid"],
+                "source": source,
+            },
+        )
+        return prep
+
+    # ------------------------------------------------------------------
     # MQTT
 
-    async def _async_handle_complete_msg(self, msg: mqtt.ReceiveMessage) -> None:
+    def _task_from_payload(self, msg: mqtt.ReceiveMessage) -> str | None:
         try:
-            task = json.loads(msg.payload)["task_id"]
+            return json.loads(msg.payload)["task_id"]
         except (ValueError, KeyError, TypeError):
             _LOGGER.warning("Bad payload on %s: %r", msg.topic, msg.payload)
-            return
-        await self.async_complete(task, source="device")
+            return None
+
+    async def _async_handle_complete_msg(self, msg: mqtt.ReceiveMessage) -> None:
+        if (task := self._task_from_payload(msg)) is not None:
+            await self.async_complete(task, source="device")
+
+    async def _async_handle_blocked_msg(self, msg: mqtt.ReceiveMessage) -> None:
+        if (task := self._task_from_payload(msg)) is not None:
+            await self.async_block(task, source="device")
 
     async def async_publish_tasks(self) -> None:
         upcoming = sorted(
@@ -257,7 +386,15 @@ class TaskPadManager:
             key=lambda i: i["due"],
         )
         payload = json.dumps(
-            [{"id": i["uid"], "name": i["summary"], "due": i["due"]} for i in upcoming]
+            [
+                {
+                    "id": i["uid"],
+                    "name": i["summary"],
+                    "due": i["due"],
+                    "blocked": bool(i.get("blocked")),
+                }
+                for i in upcoming
+            ]
         )
         try:
             await mqtt.async_publish(

@@ -12,6 +12,7 @@ DEFAULT_LOG_FILENAME = "taskpad_history.log"
 DEFAULT_INTERVAL_DAYS = 30
 
 EVENT_COMPLETED = "taskpad_completed"
+EVENT_BLOCKED = "taskpad_blocked"
 
 STORAGE_VERSION = 1
 STORAGE_KEY = "taskpad.tasks"

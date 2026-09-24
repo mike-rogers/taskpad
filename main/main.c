@@ -108,6 +108,16 @@ void app_main(void)
             }
             break;
 
+        case APP_EVT_BTN_DONE_LONG:
+            if (s_count > 0) {
+                if (taskpad_mqtt_publish_blocked(s_tasks[s_selected].id) == ESP_OK) {
+                    ui_set_status("Marked blocked - prep task created");
+                } else {
+                    ui_set_status("Block failed");
+                }
+            }
+            break;
+
         case APP_EVT_TASKS_UPDATED:
             refresh();
             set_status_time("Updated");

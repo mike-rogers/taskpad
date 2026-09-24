@@ -17,6 +17,10 @@ void taskpad_mqtt_start(QueueHandle_t event_queue);
 // Returns the number of tasks written.
 size_t taskpad_mqtt_get_tasks(task_item_t *out, size_t max);
 
-// Publish a completion; a Home Assistant automation reschedules the task and
-// republishes the task list.
+// Publish a completion; the TaskPad integration closes the item, creates
+// its successor, and republishes the task list.
 esp_err_t taskpad_mqtt_publish_complete(const char *task_id);
+
+// Publish a block request; the integration creates a linked prep task due
+// today and marks this task blocked.
+esp_err_t taskpad_mqtt_publish_blocked(const char *task_id);

@@ -128,6 +128,11 @@ component.
 - Shows tasks due within 14 days (configurable); overdue tasks always show.
 - Row color by urgency: green → yellow (≤7 days) → orange (≤2 days) →
   red (overdue).
+- Long-pressing Done (~1.5s) marks the selected task **blocked**: a linked
+  one-shot "Prep: …" item is created due today (rename it in HA to what the
+  prep actually is, e.g. "Call vet about flea meds"), and the blocked task
+  renders muted on the display. Completing the prep task auto-unblocks the
+  parent; completing the parent directly auto-closes the orphaned prep.
 - BOOT moves the selection; the Done button publishes to `taskpad/complete`,
   which runs `script.taskpad_complete`: the to-do item is closed out (it
   stays in the completed pile as a visual record), a successor item is

@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up TaskPad",
+        "description": "Importing copies the open items (and their `interval:` descriptions) from an existing to-do list. Delete or rename that list afterwards so the `taskpad` entity id stays free.",
+        "data": {
+          "topic_prefix": "MQTT topic prefix",
+          "log_path": "History log file (relative paths land in the config directory)",
+          "default_interval_days": "Default repeat interval (days)",
+          "import_entity": "Import items from this to-do list"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "topic_prefix": "MQTT topic prefix",
+          "log_path": "History log file (relative paths land in the config directory)",
+          "default_interval_days": "Default repeat interval (days)"
+        }
+      }
+    }
+  }
+}

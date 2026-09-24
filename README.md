@@ -86,6 +86,23 @@ appended to a permanent log file, `/config/taskpad_history.log`.
    `interval: 2w`, `interval: 3m`, or `interval: 1y`. Anything missing or
    unparseable falls back to 30 days.
 
+## Custom integration (M1, replaces the package — being verified)
+
+`custom_components/taskpad/` supersedes the YAML package, Local to-do, and
+File integration: an integration-owned `todo.taskpad` entity with
+structured intervals, direct MQTT handling (no automations), the same
+completion-relative rescheduling and history log, a `taskpad.complete`
+service, and a `taskpad_completed` event. Ticking the checkbox on the
+To-do card runs the full completion flow (unlike the package setup).
+
+Install: copy the folder to `custom_components/taskpad/` in the HA config
+directory, restart HA, then Settings → Devices & Services → Add
+integration → TaskPad. Use the import field to pull your open items from
+the existing list, then delete the old Local to-do list and remove the
+package's `script:`/`automation:` blocks (double handlers = double
+successors). The setup steps below describe the pre-integration package
+and remain valid as a fallback.
+
 ## Build & flash
 
 ```sh

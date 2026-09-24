@@ -1,0 +1,13 @@
+{
+  "domain": "taskpad",
+  "name": "TaskPad",
+  "codeowners": ["@rmrogers"],
+  "config_flow": true,
+  "dependencies": ["mqtt", "todo"],
+  "documentation": "https://github.com/rmrogers/taskpad",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.3.0"
+}

@@ -1,0 +1,27 @@
+"""Constants for the TaskPad integration."""
+
+DOMAIN = "taskpad"
+
+CONF_TOPIC_PREFIX = "topic_prefix"
+CONF_LOG_PATH = "log_path"
+CONF_DEFAULT_INTERVAL = "default_interval_days"
+CONF_IMPORT_ENTITY = "import_entity"
+
+DEFAULT_TOPIC_PREFIX = "taskpad"
+DEFAULT_LOG_FILENAME = "taskpad_history.log"
+DEFAULT_INTERVAL_DAYS = 30
+
+EVENT_COMPLETED = "taskpad_completed"
+
+STORAGE_VERSION = 1
+STORAGE_KEY = "taskpad.tasks"
+
+SERVICE_COMPLETE = "complete"
+ATTR_TASK = "task"
+
+# "interval: 90" / "interval: 2w" / "interval: 3m" / "interval: 1y"
+INTERVAL_PATTERN = r"interval:\s*(\d+)\s*([dwmy]?)"
+INTERVAL_UNIT_DAYS = {"": 1, "d": 1, "w": 7, "m": 30, "y": 365}
+
+STATUS_NEEDS_ACTION = "needs_action"
+STATUS_COMPLETED = "completed"

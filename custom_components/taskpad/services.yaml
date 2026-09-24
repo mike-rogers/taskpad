@@ -1,0 +1,14 @@
+complete:
+  name: Complete a task
+  description: >-
+    Completes a chore: closes the matching item, creates its successor due
+    today + interval, appends a line to the history log, and fires a
+    taskpad_completed event.
+  fields:
+    task:
+      name: Task
+      description: The to-do item's name or uid.
+      required: true
+      example: "Change furnace air filter"
+      selector:
+        text:

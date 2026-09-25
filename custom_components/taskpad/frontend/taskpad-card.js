@@ -3,6 +3,8 @@
  * Usage in a dashboard:  type: custom:taskpad-card
  */
 
+console.info("[taskpad-card] evaluating (v0.5.1)");
+
 const UNITS = ["days", "weeks", "months"];
 const UNIT_DAYS = { days: 1, weeks: 7, months: 30 };
 
@@ -297,7 +299,15 @@ function escapeHtml(text) {
   return div.innerHTML.replace(/"/g, "&quot;");
 }
 
-customElements.define("taskpad-card", TaskpadCard);
+try {
+  customElements.define("taskpad-card", TaskpadCard);
+} catch (err) {
+  console.error("[taskpad-card] define failed:", err);
+}
+console.info(
+  "[taskpad-card] registered:",
+  !!customElements.get("taskpad-card")
+);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "taskpad-card",

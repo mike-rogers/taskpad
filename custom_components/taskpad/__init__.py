@@ -8,7 +8,6 @@ from pathlib import Path
 import voluptuous as vol
 
 from homeassistant.components import mqtt
-from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -31,6 +30,7 @@ from .const import (
     SERVICE_UPDATE_TASK,
     STORAGE_KEY,
     STORAGE_VERSION,
+    VERSION,
 )
 from .manager import TaskPadManager
 
@@ -123,8 +123,54 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             )
         ]
     )
-    add_extra_js_url(hass, CARD_URL)
+    await _async_ensure_lovelace_resource(hass)
     return True
+
+
+async def _async_ensure_lovelace_resource(hass: HomeAssistant) -> None:
+    """Register the card in the Lovelace resource registry.
+
+    Resources are awaited by the frontend before cards render; scripts
+    injected via add_extra_js_url are not, and HA 2026.9 has no recovery
+    for a custom card element that registers after first render.
+    """
+    versioned_url = f"{CARD_URL}?v={VERSION}"
+    try:
+        lovelace = hass.data.get("lovelace")
+        resources = getattr(lovelace, "resources", None)
+        if resources is None:
+            _LOGGER.warning(
+                "Lovelace resource registry unavailable (YAML-mode dashboards?); "
+                "add %s as a module resource manually",
+                versioned_url,
+            )
+            return
+        if hasattr(resources, "loaded") and not resources.loaded:
+            await resources.async_load()
+        existing = next(
+            (
+                item
+                for item in resources.async_items()
+                if str(item.get("url", "")).split("?")[0] == CARD_URL
+            ),
+            None,
+        )
+        if existing is None:
+            await resources.async_create_item(
+                {"res_type": "module", "url": versioned_url}
+            )
+            _LOGGER.info("Registered Lovelace resource %s", versioned_url)
+        elif existing["url"] != versioned_url:
+            await resources.async_update_item(
+                existing["id"], {"res_type": "module", "url": versioned_url}
+            )
+            _LOGGER.info("Updated Lovelace resource to %s", versioned_url)
+    except Exception:  # noqa: BLE001 - never let card plumbing block setup
+        _LOGGER.exception(
+            "Could not register the Lovelace resource; add %s as a module "
+            "resource manually (Settings > Dashboards > Resources)",
+            versioned_url,
+        )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

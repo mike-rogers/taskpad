@@ -3,7 +3,7 @@
  * Usage in a dashboard:  type: custom:taskpad-card
  */
 
-console.info("[taskpad-card] evaluating (v0.5.2)");
+console.info("[taskpad-card] evaluating (v0.5.3)");
 
 const UNITS = ["days", "weeks", "months"];
 const UNIT_DAYS = { days: 1, weeks: 7, months: 30 };
@@ -318,3 +318,33 @@ window.customCards.push({
   name: "TaskPad Card",
   description: "List, create, and edit TaskPad periodic chores.",
 });
+
+// If this module registers while HA is mid-build, error placeholders for our
+// card can miss the whenDefined -> ll-rebuild handoff and stay stranded.
+// Sweep for them and re-fire the rebuild nudge ourselves.
+function* walkDom(root) {
+  for (const el of root.querySelectorAll("*")) {
+    yield el;
+    if (el.shadowRoot) yield* walkDom(el.shadowRoot);
+  }
+}
+
+function healStrandedCards() {
+  let healed = 0;
+  for (const el of walkDom(document.body)) {
+    if (el.localName === "hui-error-card") {
+      el.dispatchEvent(new Event("ll-rebuild", { bubbles: true, composed: true }));
+      healed++;
+    }
+  }
+  if (healed) console.info(`[taskpad-card] nudged ${healed} stranded card(s)`);
+}
+
+function scheduleHeals() {
+  [100, 1000, 3000, 8000].forEach((t) => setTimeout(healStrandedCards, t));
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", scheduleHeals);
+} else {
+  scheduleHeals();
+}

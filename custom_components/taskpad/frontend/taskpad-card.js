@@ -3,7 +3,7 @@
  * Usage in a dashboard:  type: custom:taskpad-card
  */
 
-console.info("[taskpad-card] evaluating (v0.5.1)");
+console.info("[taskpad-card] evaluating (v0.5.2)");
 
 const UNITS = ["days", "weeks", "months"];
 const UNIT_DAYS = { days: 1, weeks: 7, months: 30 };
@@ -57,7 +57,9 @@ class TaskpadCard extends HTMLElement {
   }
 
   setConfig(config) {
-    this._config = { entity: "todo.taskpad", title: "TaskPad", ...config };
+    this._config = { entity: "todo.taskpad", title: "TaskPad", ...(config || {}) };
+    // If hass arrived first (rebuild flows), render now that config exists.
+    if (this._hass) this.hass = this._hass;
   }
 
   getCardSize() {
@@ -66,6 +68,8 @@ class TaskpadCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    // hass can arrive before setConfig in rebuild flows; render waits.
+    if (!this._config) return;
     const state = hass.states[this._config.entity];
     const tasks = state ? state.attributes.tasks || [] : null;
     const snapshot = JSON.stringify(tasks);
@@ -197,9 +201,9 @@ class TaskpadCard extends HTMLElement {
   }
 
   _render() {
-    if (!this.shadowRoot) return;
+    if (!this.shadowRoot || !this._config) return;
     let body;
-    if (this._tasks === null) {
+    if (this._tasks === null || this._tasks === undefined) {
       body = `<div class="empty">Entity ${this._config.entity} not found.</div>`;
     } else if (this._editing !== null) {
       body = this._formHtml();

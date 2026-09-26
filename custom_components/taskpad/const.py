@@ -6,6 +6,10 @@ CONF_TOPIC_PREFIX = "topic_prefix"
 CONF_LOG_PATH = "log_path"
 CONF_DEFAULT_INTERVAL = "default_interval_days"
 CONF_IMPORT_ENTITY = "import_entity"
+CONF_DEVICE_HOST = "device_host"
+CONF_MQTT_URI = "mqtt_uri"
+CONF_MQTT_USERNAME = "mqtt_username"
+CONF_MQTT_PASSWORD = "mqtt_password"
 
 DEFAULT_TOPIC_PREFIX = "taskpad"
 DEFAULT_LOG_FILENAME = "taskpad_history.log"
@@ -27,7 +31,7 @@ INTERVAL_UNITS = ["days", "weeks", "months"]
 UNIT_TO_DAYS = {"days": 1, "weeks": 7, "months": 30}
 
 CARD_URL = "/taskpad_files/taskpad-card.js"
-VERSION = "0.6.0"  # keep in sync with manifest.json
+VERSION = "0.7.0"  # keep in sync with manifest.json
 
 # "interval: 90" / "interval: 2w" / "interval: 3m" / "interval: 1y"
 INTERVAL_PATTERN = r"interval:\s*(\d+)\s*([dwmy]?)"

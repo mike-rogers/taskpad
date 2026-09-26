@@ -13,6 +13,8 @@
 
 #include "wifi_conn.h"
 #include "taskpad_mqtt.h"
+#include "device_cfg.h"
+#include "adopt_server.h"
 #include "events.h"
 #include "ui.h"
 #include "input.h"
@@ -75,11 +77,24 @@ void app_main(void)
     ui_set_status("Syncing time...");
     sync_time();
 
+    static device_cfg_t cfg;
+    bool provisioned = device_cfg_load(&cfg);
+    adopt_server_start(provisioned);
+
+    if (!provisioned) {
+        // A successful adoption POST saves the config and reboots us.
+        ESP_LOGI(TAG, "unprovisioned: waiting for adoption");
+        ui_set_status("Ready to adopt: add TaskPad in Home Assistant");
+        for (;;) {
+            vTaskDelay(portMAX_DELAY);
+        }
+    }
+
     QueueHandle_t queue = xQueueCreate(8, sizeof(app_event_t));
     input_init(queue);
 
     ui_set_status("Connecting to MQTT...");
-    taskpad_mqtt_start(queue);
+    taskpad_mqtt_start(queue, &cfg);
 
     for (;;) {
         app_event_t evt;

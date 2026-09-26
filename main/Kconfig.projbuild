@@ -8,24 +8,8 @@ menu "TaskPad Configuration"
         string "Wi-Fi password"
         default ""
 
-    config TASKPAD_MQTT_URI
-        string "MQTT broker URI"
-        default "mqtt://192.168.1.100:1883"
-        help
-            The Mosquitto add-on listens on port 1883 of the HA host.
-            Use an IP address or a real hostname; .local mDNS names do
-            not resolve without adding the espressif/mdns component.
-
-    config TASKPAD_MQTT_USERNAME
-        string "MQTT username"
-        default ""
-        help
-            With the Mosquitto add-on, any Home Assistant user works;
-            best practice is a dedicated 'taskpad' user.
-
-    config TASKPAD_MQTT_PASSWORD
-        string "MQTT password"
-        default ""
+    # MQTT broker config is no longer compiled in: it is pushed by the
+    # Home Assistant integration during adoption and stored in NVS.
 
     config TASKPAD_HORIZON_DAYS
         int "Show tasks due within this many days"

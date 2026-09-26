@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
         "title": "Set up TaskPad",
@@ -10,18 +11,52 @@
           "default_interval_days": "Default repeat interval (days)",
           "import_entity": "Import items from this to-do list"
         }
+      },
+      "adopt": {
+        "title": "Adopt TaskPad",
+        "description": "TaskPad found at {host}. Enter the MQTT broker details to push to the device; it stores them and reboots onto your broker.",
+        "data": {
+          "mqtt_uri": "MQTT broker URI",
+          "mqtt_username": "MQTT username",
+          "mqtt_password": "MQTT password"
+        }
       }
+    },
+    "error": {
+      "cannot_connect": "Could not push the configuration to the device. Check that it is powered, on this network, and showing 'Ready to adopt'."
+    },
+    "abort": {
+      "already_configured": "TaskPad is already set up. The device's address was noted; use Configure → Adopt device to push credentials."
     }
   },
   "options": {
     "step": {
       "init": {
+        "menu_options": {
+          "settings": "Settings",
+          "adopt": "Adopt device (push broker credentials)"
+        }
+      },
+      "settings": {
         "data": {
           "topic_prefix": "MQTT topic prefix",
           "log_path": "History log file (relative paths land in the config directory)",
           "default_interval_days": "Default repeat interval (days)"
         }
+      },
+      "adopt": {
+        "title": "Adopt TaskPad",
+        "description": "Pushes broker credentials to the device over your LAN; it stores them and reboots. The host is filled in automatically when the device has been discovered.",
+        "data": {
+          "device_host": "Device address (IP or hostname)",
+          "mqtt_uri": "MQTT broker URI",
+          "mqtt_username": "MQTT username",
+          "mqtt_password": "MQTT password"
+        }
       }
+    },
+    "error": {
+      "cannot_connect": "Could not push the configuration to the device. Check the address and that the device is powered and on this network."
     }
   }
 }

@@ -7,10 +7,12 @@
 #include "esp_err.h"
 
 #include "tasks.h"
+#include "device_cfg.h"
 
-// Connect to the MQTT broker, publish HA discovery configs, and subscribe to
-// the retained task list. Posts APP_EVT_* to the given queue.
-void taskpad_mqtt_start(QueueHandle_t event_queue);
+// Connect to the MQTT broker from the adopted (NVS) config and subscribe to
+// the retained task list. Posts APP_EVT_* to the given queue. cfg must
+// outlive the client (main keeps it static).
+void taskpad_mqtt_start(QueueHandle_t event_queue, const device_cfg_t *cfg);
 
 // Copy the latest task list into out, with days_left computed as of now and
 // tasks beyond the configured horizon filtered out (overdue always included).

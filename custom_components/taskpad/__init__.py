@@ -36,7 +36,7 @@ from .manager import TaskPadManager
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.TODO]
+PLATFORMS = [Platform.TODO, Platform.BINARY_SENSOR]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 TASK_REF_SCHEMA = vol.Schema({vol.Required(ATTR_TASK): cv.string})

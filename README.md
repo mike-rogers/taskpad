@@ -118,15 +118,21 @@ they're kept as documentation of the fallback path, not required setup.
 
 ```sh
 idf.py set-target esp32c3
-idf.py menuconfig   # TaskPad Configuration: Wi-Fi, MQTT broker + creds, pins
+idf.py menuconfig   # TaskPad Configuration: Wi-Fi + pins (broker config
+                    # is pushed by the HA integration during adoption)
 idf.py build flash monitor
 ```
 
-Note: use an IP address or DNS hostname for the broker URI — `.local` mDNS
-names don't resolve from the device without adding the `espressif/mdns`
-component.
+Broker setup happens over the network, not at compile time: the device
+advertises `_taskpad._tcp` via mDNS and serves a small local API
+(`GET /api/info`, `POST /api/config`). Home Assistant discovers it
+("New device found: TaskPad"), and the integration's adoption step pushes
+the MQTT broker URI and credentials, which the device stores in NVS and
+reboots onto. Re-adopt any time (credential rotation, new broker) via the
+integration's Configure → "Adopt device" menu. Use an IP address for the
+broker URI — the device can't resolve `.local` names.
 
-`sdkconfig` holds your Wi-Fi and MQTT passwords, and is gitignored.
+`sdkconfig` holds your Wi-Fi password, and is gitignored.
 
 ## Behavior
 

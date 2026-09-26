@@ -22,28 +22,13 @@ static const char *TAG = "taskpad_mqtt";
 
 #define TASKS_PAYLOAD_MAX 8192
 
-// Shared by every discovery config so HA groups the entities as one device.
-#define DEVICE_JSON                                                       \
-    "\"device\":{\"identifiers\":[\"taskpad\"],\"name\":\"TaskPad\","     \
-    "\"manufacturer\":\"DIY\",\"model\":\"ESP32-C3 + ST7789 2.8\\\"\","   \
-    "\"sw_version\":\"0.2.0\"}"
-
-static const char *DISC_CONNECTIVITY_TOPIC =
-    "homeassistant/binary_sensor/taskpad/connectivity/config";
-static const char *DISC_CONNECTIVITY =
-    "{\"name\":\"Connectivity\",\"unique_id\":\"taskpad_connectivity\","
-    "\"state_topic\":\"" TOPIC_AVAIL "\",\"payload_on\":\"online\","
-    "\"payload_off\":\"offline\",\"device_class\":\"connectivity\","
-    "\"entity_category\":\"diagnostic\"," DEVICE_JSON "}";
-
-static const char *DISC_LAST_COMPLETED_TOPIC =
-    "homeassistant/sensor/taskpad/last_completed/config";
-static const char *DISC_LAST_COMPLETED =
-    "{\"name\":\"Last completed task\",\"unique_id\":\"taskpad_last_completed\","
-    "\"state_topic\":\"" TOPIC_COMPLETE "\","
-    "\"value_template\":\"{{ value_json.task_id }}\","
-    "\"icon\":\"mdi:check-circle-outline\","
-    "\"availability_topic\":\"" TOPIC_AVAIL "\"," DEVICE_JSON "}";
+// The integration owns the HA device/entities since M3; these retained
+// discovery configs from older firmware get cleared on connect. Remove
+// this cleanup once all devices have run 0.7.0+.
+static const char *STALE_DISCOVERY_TOPICS[] = {
+    "homeassistant/binary_sensor/taskpad/connectivity/config",
+    "homeassistant/sensor/taskpad/last_completed/config",
+};
 
 static esp_mqtt_client_handle_t s_client;
 static QueueHandle_t s_queue;
@@ -137,10 +122,11 @@ static void on_mqtt_event(void *arg, esp_event_base_t base, int32_t event_id,
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         esp_mqtt_client_publish(s_client, TOPIC_AVAIL, "online", 0, 1, true);
-        esp_mqtt_client_publish(s_client, DISC_CONNECTIVITY_TOPIC,
-                                DISC_CONNECTIVITY, 0, 1, true);
-        esp_mqtt_client_publish(s_client, DISC_LAST_COMPLETED_TOPIC,
-                                DISC_LAST_COMPLETED, 0, 1, true);
+        for (size_t i = 0;
+             i < sizeof(STALE_DISCOVERY_TOPICS) / sizeof(char *); i++) {
+            esp_mqtt_client_publish(s_client, STALE_DISCOVERY_TOPICS[i], "",
+                                    0, 1, true);
+        }
         esp_mqtt_client_subscribe(s_client, TOPIC_TASKS, 1);
         post_event(APP_EVT_CONN_UP);
         break;
@@ -182,20 +168,17 @@ static void on_mqtt_event(void *arg, esp_event_base_t base, int32_t event_id,
     }
 }
 
-void taskpad_mqtt_start(QueueHandle_t event_queue)
+void taskpad_mqtt_start(QueueHandle_t event_queue, const device_cfg_t *cfg)
 {
     s_queue = event_queue;
     s_lock = xSemaphoreCreateMutex();
 
-    const esp_mqtt_client_config_t cfg = {
-        .broker.address.uri = CONFIG_TASKPAD_MQTT_URI,
+    const esp_mqtt_client_config_t mqtt_cfg = {
+        .broker.address.uri = cfg->mqtt_uri,
         .credentials = {
-            .username = strlen(CONFIG_TASKPAD_MQTT_USERNAME)
-                            ? CONFIG_TASKPAD_MQTT_USERNAME
-                            : NULL,
-            .authentication.password = strlen(CONFIG_TASKPAD_MQTT_PASSWORD)
-                                           ? CONFIG_TASKPAD_MQTT_PASSWORD
-                                           : NULL,
+            .username = cfg->mqtt_user[0] ? cfg->mqtt_user : NULL,
+            .authentication.password = cfg->mqtt_pass[0] ? cfg->mqtt_pass
+                                                         : NULL,
         },
         .session.last_will = {
             .topic = TOPIC_AVAIL,
@@ -205,7 +188,7 @@ void taskpad_mqtt_start(QueueHandle_t event_queue)
         },
         .buffer.size = 4096,
     };
-    s_client = esp_mqtt_client_init(&cfg);
+    s_client = esp_mqtt_client_init(&mqtt_cfg);
     ESP_ERROR_CHECK(esp_mqtt_client_register_event(
         s_client, ESP_EVENT_ANY_ID, on_mqtt_event, NULL));
     ESP_ERROR_CHECK(esp_mqtt_client_start(s_client));

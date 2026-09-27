@@ -1,10 +1,11 @@
 {
   "domain": "taskpad",
   "name": "TaskPad",
-  "codeowners": ["@rmrogers"],
+  "codeowners": ["@mike-rogers"],
   "config_flow": true,
   "dependencies": ["mqtt", "todo", "http", "frontend", "lovelace"],
-  "documentation": "https://github.com/rmrogers/taskpad",
+  "documentation": "https://github.com/mike-rogers/taskpad",
+  "issue_tracker": "https://github.com/mike-rogers/taskpad/issues",
   "integration_type": "device",
   "iot_class": "local_push",
   "requirements": [],

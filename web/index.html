@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaskPad</title>
+<meta name="description" content="An ESP32-C3 desk gadget that keeps your periodic chores honest, backed by Home Assistant.">
+<style>
+  :root {
+    --bg: #101418; --card: #1c232b; --text: #eceff1; --muted: #90a4ae;
+    --green: #43a047; --yellow: #fdd835; --orange: #fb8c00; --red: #e53935;
+    --accent: #4fc3f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 2.2em; margin: 0.2em 0; }
+  h1 .stripe { color: var(--green); }
+  h2 { margin-top: 2em; border-left: 4px solid var(--accent); padding-left: 12px; }
+  a { color: var(--accent); }
+  .tagline { color: var(--muted); font-size: 1.1em; margin-top: 0; }
+  .card {
+    background: var(--card); border-radius: 10px; padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .demo { display: flex; flex-direction: column; gap: 8px; }
+  .task { display: flex; justify-content: space-between; border-left: 4px solid;
+          padding: 8px 12px; border-radius: 6px; background: #232b34; }
+  .task span:last-child { font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: 6px 10px; border-bottom: 1px solid #2c353f; }
+  th { color: var(--muted); font-weight: 500; }
+  code, pre { background: #0b0e11; border-radius: 6px; padding: 2px 6px; }
+  pre { padding: 12px; overflow-x: auto; }
+  ol li, ul li { margin: 6px 0; }
+  .flash { text-align: center; padding: 24px; }
+  esp-web-install-button { --esp-tools-button-color: var(--accent); }
+  .note { color: var(--muted); font-size: 0.9em; }
+  footer { margin-top: 48px; color: var(--muted); font-size: 0.9em;
+           border-top: 1px solid #2c353f; padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1><span class="stripe">▍</span>TaskPad</h1>
+  <p class="tagline">A little desk appliance that keeps your periodic chores honest —
+  furnace filters, flea meds, smoke-detector batteries — backed by Home Assistant.</p>
+
+  <div class="card demo" aria-hidden="true">
+    <div class="task" style="border-color: var(--red)"><span>Replace smoke detector batteries</span><span style="color: var(--red)">2d late</span></div>
+    <div class="task" style="border-color: var(--orange)"><span>Give the dog flea medication</span><span style="color: var(--orange)">today</span></div>
+    <div class="task" style="border-color: var(--green)"><span>Change furnace air filter</span><span style="color: var(--green)">12 days</span></div>
+  </div>
+
+  <h2>What it does</h2>
+  <ul>
+    <li>Shows upcoming chores on a 2.8" display, color-coded by urgency.</li>
+    <li>One button press completes a chore; the next occurrence is scheduled
+        from the <em>completion date</em>, not a blind calendar.</li>
+    <li>Long-press marks a chore blocked and spawns its prerequisite
+        ("call the vet first") at the top of the list.</li>
+    <li>Every completion lands in a permanent history log in Home Assistant —
+        proof you really did change that filter in March.</li>
+    <li>Tasks are created and edited from a Home Assistant dashboard card
+        (name, due date, repeat interval, dependency text).</li>
+    <li>Provisioned like a real product: Wi-Fi via the HA companion app
+        (Improv BLE), discovered and adopted by HA over the network, and
+        firmware updates installed from the HA device page (OTA).</li>
+  </ul>
+
+  <h2>Flash it from your browser</h2>
+  <div class="card flash">
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <esp-web-install-button manifest="./manifest.json"></esp-web-install-button>
+    <p class="note">Chrome or Edge (WebSerial). Plug the board in over USB,
+    click, pick the serial port. After flashing: open the Home Assistant app
+    to set up Wi-Fi, then HA discovers the device and walks you through
+    adoption. No toolchain required.</p>
+  </div>
+
+  <h2>Hardware</h2>
+  <table>
+    <tr><th>Part</th><th>Notes</th></tr>
+    <tr><td>SparkFun Pro Micro ESP32-C3</td><td>the brains; 4MB flash</td></tr>
+    <tr><td>2.8" 240×320 ST7789 TFT (SPI)</td><td>e.g. Lonely Binary IPS panel</td></tr>
+    <tr><td>1 momentary button</td><td>"Done" (GPIO1 → GND); BOOT button doubles as "Down"</td></tr>
+    <tr><td>Case</td><td><a href="taskpad_base.stl">taskpad_base.stl</a> ·
+        <a href="taskpad_lid.stl">taskpad_lid.stl</a></td></tr>
+  </table>
+  <p class="note">Default wiring: SCK 6 · MOSI 7 · CS 10 · DC 4 · RST 5 ·
+  BLK 3 — all adjustable via <code>menuconfig</code> if you build from source.</p>
+
+  <h2>Home Assistant integration</h2>
+  <ol>
+    <li>HACS → three-dot menu → <em>Custom repositories</em> → add
+        <code>https://github.com/mike-rogers/taskpad</code> (type: Integration)
+        → install → restart HA.</li>
+    <li>Requires the Mosquitto broker add-on (or any MQTT broker HA is
+        connected to) and a broker login for the device.</li>
+    <li>Settings → Devices &amp; Services: TaskPad appears as a discovered
+        device once it's on your network → Configure → enter broker
+        credentials. Done.</li>
+    <li>Add the dashboard card: <code>type: custom:taskpad-card</code>.</li>
+  </ol>
+
+  <h2>Build from source</h2>
+  <pre>git clone https://github.com/mike-rogers/taskpad
+cd taskpad
+idf.py set-target esp32c3
+idf.py build flash monitor   # ESP-IDF v6.0</pre>
+
+  <footer>
+    MIT licensed · <a href="https://github.com/mike-rogers/taskpad">Source on GitHub</a>
+    · Built with ESP-IDF, LVGL, NimBLE, and a healthy fear of dead
+    smoke-detector batteries.
+  </footer>
+</main>
+</body>
+</html>

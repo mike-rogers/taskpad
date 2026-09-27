@@ -1,0 +1,12 @@
+{
+  "name": "TaskPad",
+  "version": "latest release",
+  "home_assistant_domain": "taskpad",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [{ "path": "taskpad-factory.bin", "offset": 0 }]
+    }
+  ]
+}

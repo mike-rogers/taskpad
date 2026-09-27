@@ -1,5 +1,10 @@
 # TaskPad
 
+**[Project page & browser flasher](https://mike-rogers.github.io/taskpad/)** ·
+install the integration via HACS custom repository
+(`https://github.com/mike-rogers/taskpad`) · printable case in [`stl/`](stl/) ·
+MIT licensed
+
 A small desk gadget that nags you (politely) about periodic chores — change
 the furnace filter, dose the dog, swap smoke detector batteries. Home
 Assistant is the source of truth; this device displays what's coming due and

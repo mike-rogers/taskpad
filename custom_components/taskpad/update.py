@@ -83,7 +83,12 @@ class TaskPadUpdate(UpdateEntity):
 
     async def async_update(self) -> None:
         def read_version() -> str | None:
+            # Both the marker and the binary must exist: a git/HACS install
+            # tracks version.txt but not the 1.7MB taskpad.bin, and we must
+            # not advertise an update whose download would 404.
             try:
+                if not (VERSION_FILE.parent / "taskpad.bin").is_file():
+                    return None
                 return VERSION_FILE.read_text(encoding="utf-8").strip() or None
             except OSError:
                 return None

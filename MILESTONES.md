@@ -65,17 +65,25 @@ Firmware: unchanged.
       above, prefilled on edit
 - [x] Legacy `interval:` description parsing retained as fallback input
 
-## M3 — Discovery & adoption
+## M3 — Discovery & adoption (done, 2026-09-26)
 
-- [ ] Firmware: mDNS advertisement (`_taskpad._tcp`, TXT: id + version) and
+- [x] Firmware: mDNS advertisement (`_taskpad._tcp`, TXT: id + version) and
       a small local HTTP endpoint that accepts broker config on first boot;
       config persisted to NVS
-- [ ] Integration: zeroconf discovery in the manifest → "New device found"
+- [x] Integration: zeroconf discovery in the manifest → "New device found"
       card → config flow pushes broker credentials to the device
-- [ ] Remove Wi-Fi/broker secrets from menuconfig (Wi-Fi still via
+- [x] Remove Wi-Fi/broker secrets from menuconfig (Wi-Fi still via
       menuconfig until M4)
-- [ ] Remove device-side MQTT discovery configs (the integration owns the
+- [x] Remove device-side MQTT discovery configs (the integration owns the
       device registration); firmware sheds the discovery payloads
+
+Note: adoption verified working on first try. Auto-discovery initially
+appeared broken; a Linux host resolving both homeassistant.local and the
+device disproved the network-filtering theory (the Mac's failures were
+macOS Local Network permission gating) and pointed at the config flow
+reading the removed ZeroconfServiceInfo.host attribute — fixed to
+ip_address. Adoption by IP via Configure -> Adopt device works
+regardless of discovery.
 
 ## M4 — Improv Wi-Fi provisioning (BLE)
 

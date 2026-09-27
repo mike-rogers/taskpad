@@ -80,7 +80,11 @@ class TaskPadConfigFlow(ConfigFlow, domain=DOMAIN):
         self._host: str | None = None
 
     async def async_step_zeroconf(self, discovery_info: ZeroconfServiceInfo):
-        host = discovery_info.host
+        # ZeroconfServiceInfo.host was removed from HA; ip_address is current.
+        host = str(
+            getattr(discovery_info, "ip_address", None)
+            or getattr(discovery_info, "host", "")
+        )
         device_id = discovery_info.properties.get("id") or discovery_info.name
         await self.async_set_unique_id(device_id)
 

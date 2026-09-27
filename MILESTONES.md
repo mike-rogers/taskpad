@@ -122,5 +122,8 @@ the HA share -> Install in HA.
 
 - [ ] Adafruit ANO rotary encoder input backend (I2C seesaw) behind the
       existing input abstraction
-- [ ] HACS packaging (`hacs.json`, repo structure) and publication
+- [x] HACS packaging and publication (done 2026-09-27:
+      github.com/mike-rogers/taskpad, MIT; CI builds firmware and
+      publishes releases; browser flasher + project page at
+      mike-rogers.github.io/taskpad; case STLs in stl/)
 - [ ] Lovelace dashboard example

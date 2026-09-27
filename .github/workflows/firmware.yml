@@ -6,6 +6,9 @@ on:
     tags: ["v*"]
   pull_request:
 
+permissions:
+  contents: write # release creation needs it; new repos default to read-only
+
 jobs:
   build:
     runs-on: ubuntu-latest

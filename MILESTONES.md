@@ -89,15 +89,20 @@ only re-surfaces the discovery after a fresh device announcement, so a
 device reboot may be needed when re-adding. Discovery flows are
 suppressed by design while an entry exists (single_config_entry).
 
-## M4 — Improv Wi-Fi provisioning (BLE)
+## M4 — Improv Wi-Fi provisioning (BLE) (done, 2026-09-27)
 
-- [ ] Firmware: Improv-over-BLE per the published spec; factory-fresh
+- [x] Firmware: Improv-over-BLE per the published spec; factory-fresh
       device is provisioned from the HA companion app, then M3 discovery
       takes over (self-contained `improv_ble` module, reusable in other
       gadgets: NimBLE GATT service + advertising + RPC, project-specific
       behavior injected via a connect callback)
-- [ ] Wi-Fi credentials live in NVS; menuconfig values remain an optional
+- [x] Wi-Fi credentials live in NVS; menuconfig values remain an optional
       dev-only fallback (empty by default) rather than being removed
+
+Note: verified with the HA companion app end-to-end (including
+fail-fast retry on mistyped credentials). Wi-Fi passwords must be
+typed on the phone: mobile OSes expose stored Wi-Fi credentials to
+no app, so no provisioning flow can prefill them.
 
 ## M5 — OTA updates
 

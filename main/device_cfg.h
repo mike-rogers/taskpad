@@ -3,15 +3,23 @@
 #include <stdbool.h>
 #include "esp_err.h"
 
-// Broker configuration pushed by the Home Assistant integration during
-// adoption and persisted in NVS. Wi-Fi stays in menuconfig until M4.
+// Provisioned configuration persisted in NVS: broker settings pushed by the
+// Home Assistant integration during adoption, Wi-Fi credentials from Improv
+// BLE provisioning (menuconfig values remain a dev-only fallback).
 typedef struct {
     char mqtt_uri[128];
     char mqtt_user[64];
     char mqtt_pass[64];
+    char wifi_ssid[33];
+    char wifi_pass[65];
 } device_cfg_t;
 
-// Load the stored config; returns false when the device is unprovisioned.
+// Load the stored config; returns false when the BROKER side is
+// unprovisioned. Wi-Fi fields are filled (empty when absent).
 bool device_cfg_load(device_cfg_t *cfg);
 
+// Save broker settings (adoption). Leaves Wi-Fi keys untouched.
 esp_err_t device_cfg_save(const device_cfg_t *cfg);
+
+// Save Wi-Fi credentials (Improv provisioning).
+esp_err_t device_cfg_save_wifi(const char *ssid, const char *password);

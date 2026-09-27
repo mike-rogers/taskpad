@@ -93,8 +93,11 @@ suppressed by design while an entry exists (single_config_entry).
 
 - [ ] Firmware: Improv-over-BLE per the published spec; factory-fresh
       device is provisioned from the HA companion app, then M3 discovery
-      takes over
-- [ ] Remove the last menuconfig secrets
+      takes over (self-contained `improv_ble` module, reusable in other
+      gadgets: NimBLE GATT service + advertising + RPC, project-specific
+      behavior injected via a connect callback)
+- [ ] Wi-Fi credentials live in NVS; menuconfig values remain an optional
+      dev-only fallback (empty by default) rather than being removed
 
 ## M5 — OTA updates
 

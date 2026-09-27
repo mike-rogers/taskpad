@@ -24,8 +24,32 @@ bool device_cfg_load(device_cfg_t *cfg)
     if (nvs_get_str(handle, "mqtt_pass", cfg->mqtt_pass, &size) != ESP_OK) {
         cfg->mqtt_pass[0] = '\0';
     }
+    size = sizeof(cfg->wifi_ssid);
+    if (nvs_get_str(handle, "wifi_ssid", cfg->wifi_ssid, &size) != ESP_OK) {
+        cfg->wifi_ssid[0] = '\0';
+    }
+    size = sizeof(cfg->wifi_pass);
+    if (nvs_get_str(handle, "wifi_pass", cfg->wifi_pass, &size) != ESP_OK) {
+        cfg->wifi_pass[0] = '\0';
+    }
     nvs_close(handle);
     return ok;
+}
+
+esp_err_t device_cfg_save_wifi(const char *ssid, const char *password)
+{
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if ((err = nvs_set_str(handle, "wifi_ssid", ssid)) == ESP_OK &&
+        (err = nvs_set_str(handle, "wifi_pass", password ? password : "")) ==
+            ESP_OK) {
+        err = nvs_commit(handle);
+    }
+    nvs_close(handle);
+    return err;
 }
 
 esp_err_t device_cfg_save(const device_cfg_t *cfg)

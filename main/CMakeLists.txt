@@ -3,11 +3,13 @@ idf_component_register(SRCS "main.c"
                             "taskpad_mqtt.c"
                             "device_cfg.c"
                             "adopt_server.c"
+                            "improv_ble.c"
                             "ui.c"
                             "input.c"
                        PRIV_REQUIRES esp_wifi
                                      nvs_flash
                                      esp_http_server
+                                     bt
                                      esp_lcd
                                      esp_driver_spi
                                      esp_driver_gpio

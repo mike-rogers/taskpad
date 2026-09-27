@@ -11,10 +11,13 @@
 #include "esp_netif_sntp.h"
 #include "nvs_flash.h"
 
+#include "esp_mac.h"
+
 #include "wifi_conn.h"
 #include "taskpad_mqtt.h"
 #include "device_cfg.h"
 #include "adopt_server.h"
+#include "improv_ble.h"
 #include "events.h"
 #include "ui.h"
 #include "input.h"
@@ -37,6 +40,20 @@ static void sync_time(void)
     if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(15000)) != ESP_OK) {
         ESP_LOGW(TAG, "SNTP sync timed out; due dates may be wrong until it lands");
     }
+}
+
+// Improv hands us candidate credentials; trial them and persist on success.
+static bool improv_try_connect(const char *ssid, const char *password)
+{
+    ui_set_status("Trying Wi-Fi...");
+    if (!wifi_conn_try(ssid, password, 15000)) {
+        ui_set_status("Wi-Fi failed - try again from the app");
+        return false;
+    }
+    if (device_cfg_save_wifi(ssid, password) != ESP_OK) {
+        ESP_LOGE(TAG, "could not persist Wi-Fi credentials");
+    }
+    return true;
 }
 
 static void refresh(void)
@@ -71,14 +88,37 @@ void app_main(void)
 
     ui_init();
 
-    ui_set_status("Connecting to Wi-Fi...");
-    wifi_conn_start();
+    static device_cfg_t cfg;
+    bool provisioned = device_cfg_load(&cfg);
+
+    wifi_conn_init();
+
+    // Wi-Fi credentials: NVS (Improv-provisioned) first, then the optional
+    // menuconfig dev fallback, else BLE provisioning via the HA app.
+    const char *ssid = cfg.wifi_ssid[0] ? cfg.wifi_ssid
+                                        : CONFIG_TASKPAD_WIFI_SSID;
+    const char *pass = cfg.wifi_ssid[0] ? cfg.wifi_pass
+                                        : CONFIG_TASKPAD_WIFI_PASSWORD;
+    if (ssid[0]) {
+        ui_set_status("Connecting to Wi-Fi...");
+        while (!wifi_conn_try(ssid, pass, 20000)) {
+            ui_set_status("Wi-Fi retrying...");
+        }
+    } else {
+        uint8_t mac[6];
+        static char name[24];
+        esp_read_mac(mac, ESP_MAC_WIFI_STA);
+        snprintf(name, sizeof(name), "taskpad-%02x%02x%02x", mac[3], mac[4],
+                 mac[5]);
+        ui_set_status("Set up Wi-Fi with the Home Assistant app");
+        improv_ble_start(name, improv_try_connect);
+        improv_ble_wait_provisioned();
+        improv_ble_stop();
+        ui_set_status("Wi-Fi connected");
+    }
 
     ui_set_status("Syncing time...");
     sync_time();
-
-    static device_cfg_t cfg;
-    bool provisioned = device_cfg_load(&cfg);
     adopt_server_start(provisioned);
 
     if (!provisioned) {

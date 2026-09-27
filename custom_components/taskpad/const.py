@@ -31,7 +31,8 @@ INTERVAL_UNITS = ["days", "weeks", "months"]
 UNIT_TO_DAYS = {"days": 1, "weeks": 7, "months": 30}
 
 CARD_URL = "/taskpad_files/taskpad-card.js"
-VERSION = "0.7.0"  # keep in sync with manifest.json
+FIRMWARE_URL = "/taskpad_files/firmware.bin"
+VERSION = "0.8.0"  # keep in sync with manifest.json
 
 # "interval: 90" / "interval: 2w" / "interval: 3m" / "interval: 1y"
 INTERVAL_PATTERN = r"interval:\s*(\d+)\s*([dwmy]?)"

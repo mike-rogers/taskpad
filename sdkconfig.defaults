@@ -1,8 +1,13 @@
 # TaskPad build defaults
-# SparkFun Pro Micro ESP32-C3 has 4MB flash; give the app 3MB
+# SparkFun Pro Micro ESP32-C3, 4MB flash: dual 1984KB OTA app slots
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# OTA: pull over plain http on the LAN; roll back if the new app never
+# marks itself healthy (done after the first MQTT connect)
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP=y
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
 
 # BLE (NimBLE) for Improv Wi-Fi provisioning; peripheral role only,

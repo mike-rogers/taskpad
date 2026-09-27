@@ -12,6 +12,7 @@
 #include "nvs_flash.h"
 
 #include "esp_mac.h"
+#include "esp_ota_ops.h"
 
 #include "wifi_conn.h"
 #include "taskpad_mqtt.h"
@@ -180,6 +181,9 @@ void app_main(void)
 
         case APP_EVT_CONN_UP:
             ui_set_status("Connected");
+            // A healthy MQTT connection is our post-OTA health check: only
+            // now does a freshly flashed image escape bootloader rollback.
+            esp_ota_mark_app_valid_cancel_rollback();
             break;
 
         case APP_EVT_CONN_DOWN:

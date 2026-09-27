@@ -58,6 +58,7 @@ static uint8_t s_own_addr_type;
 
 static char s_pending_ssid[33];
 static char s_pending_pass[65];
+static volatile bool s_stopping;
 
 static void advertise(void);
 
@@ -249,6 +250,11 @@ static int gap_event(struct ble_gap_event *event, void *arg)
 
 static void advertise(void)
 {
+    // Late GAP callbacks (e.g. the phone disconnecting right after success)
+    // must not re-arm advertising while the stack is being torn down.
+    if (s_stopping) {
+        return;
+    }
     // Service data (16-bit UUID 0x4677): state, capabilities, 4 reserved.
     // This is what the Home Assistant companion app scans for.
     static uint8_t svc_data[8];
@@ -330,6 +336,7 @@ void improv_ble_wait_provisioned(void)
 
 void improv_ble_stop(void)
 {
+    s_stopping = true;
     ble_gap_adv_stop();
     nimble_port_stop();
     nimble_port_deinit();

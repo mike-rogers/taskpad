@@ -1,6 +1,8 @@
 build/
 managed_components/
 __pycache__/
+# staged OTA binary (1.7MB per release; version.txt stays tracked)
+custom_components/taskpad/firmware/taskpad.bin
 # CLion
 cmake-build-*/
 .idea/

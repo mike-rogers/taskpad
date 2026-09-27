@@ -11,7 +11,9 @@
 #include "cJSON.h"
 
 #include "taskpad_mqtt.h"
+#include "ota_update.h"
 #include "events.h"
+#include "fw_version.h"
 
 static const char *TAG = "taskpad_mqtt";
 
@@ -19,6 +21,8 @@ static const char *TAG = "taskpad_mqtt";
 #define TOPIC_COMPLETE "taskpad/complete"
 #define TOPIC_BLOCKED "taskpad/blocked"
 #define TOPIC_AVAIL "taskpad/availability"
+#define TOPIC_OTA "taskpad/ota"
+#define TOPIC_STATUS "taskpad/status"
 
 #define TASKS_PAYLOAD_MAX 8192
 
@@ -37,7 +41,10 @@ static SemaphoreHandle_t s_lock;
 static task_item_t s_tasks[TASKS_MAX]; // raw list as published by HA
 static size_t s_count;
 
-static char s_payload[TASKS_PAYLOAD_MAX]; // reassembly buffer for TOPIC_TASKS
+static char s_payload[TASKS_PAYLOAD_MAX]; // reassembly buffer for subscriptions
+
+typedef enum { RX_NONE, RX_TASKS, RX_OTA } rx_topic_t;
+static rx_topic_t s_rx_topic = RX_NONE;
 
 static void post_event(app_event_t evt)
 {
@@ -114,6 +121,18 @@ static void parse_tasks(const char *json)
     post_event(APP_EVT_TASKS_UPDATED);
 }
 
+static void handle_ota_msg(const char *json)
+{
+    cJSON *root = cJSON_Parse(json);
+    cJSON *url = cJSON_GetObjectItem(root, "url");
+    if (cJSON_IsString(url) && url->valuestring[0]) {
+        ota_update_start(url->valuestring);
+    } else {
+        ESP_LOGW(TAG, "OTA message without url");
+    }
+    cJSON_Delete(root);
+}
+
 static void on_mqtt_event(void *arg, esp_event_base_t base, int32_t event_id,
                           void *event_data)
 {
@@ -122,12 +141,16 @@ static void on_mqtt_event(void *arg, esp_event_base_t base, int32_t event_id,
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         esp_mqtt_client_publish(s_client, TOPIC_AVAIL, "online", 0, 1, true);
+        esp_mqtt_client_publish(s_client, TOPIC_STATUS,
+                                "{\"version\":\"" TASKPAD_FW_VERSION "\"}",
+                                0, 1, true);
         for (size_t i = 0;
              i < sizeof(STALE_DISCOVERY_TOPICS) / sizeof(char *); i++) {
             esp_mqtt_client_publish(s_client, STALE_DISCOVERY_TOPICS[i], "",
                                     0, 1, true);
         }
         esp_mqtt_client_subscribe(s_client, TOPIC_TASKS, 1);
+        esp_mqtt_client_subscribe(s_client, TOPIC_OTA, 1);
         post_event(APP_EVT_CONN_UP);
         break;
 
@@ -146,20 +169,35 @@ static void on_mqtt_event(void *arg, esp_event_base_t base, int32_t event_id,
     case MQTT_EVENT_DATA:
         // Payloads larger than the client buffer arrive in fragments; the
         // topic is only present on the first one.
-        if (evt->current_data_offset == 0 &&
-            (evt->topic_len != strlen(TOPIC_TASKS) ||
-             strncmp(evt->topic, TOPIC_TASKS, evt->topic_len) != 0)) {
+        if (evt->current_data_offset == 0) {
+            if (evt->topic_len == strlen(TOPIC_TASKS) &&
+                strncmp(evt->topic, TOPIC_TASKS, evt->topic_len) == 0) {
+                s_rx_topic = RX_TASKS;
+            } else if (evt->topic_len == strlen(TOPIC_OTA) &&
+                       strncmp(evt->topic, TOPIC_OTA, evt->topic_len) == 0) {
+                s_rx_topic = RX_OTA;
+            } else {
+                s_rx_topic = RX_NONE;
+            }
+        }
+        if (s_rx_topic == RX_NONE) {
             break;
         }
         if (evt->total_data_len >= TASKS_PAYLOAD_MAX) {
-            ESP_LOGE(TAG, "task payload too large (%d bytes)",
+            ESP_LOGE(TAG, "payload too large (%d bytes)",
                      evt->total_data_len);
+            s_rx_topic = RX_NONE;
             break;
         }
         memcpy(s_payload + evt->current_data_offset, evt->data, evt->data_len);
         if (evt->current_data_offset + evt->data_len == evt->total_data_len) {
             s_payload[evt->total_data_len] = '\0';
-            parse_tasks(s_payload);
+            if (s_rx_topic == RX_TASKS) {
+                parse_tasks(s_payload);
+            } else {
+                handle_ota_msg(s_payload);
+            }
+            s_rx_topic = RX_NONE;
         }
         break;
 

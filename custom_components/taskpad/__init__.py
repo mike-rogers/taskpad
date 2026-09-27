@@ -20,6 +20,7 @@ from homeassistant.helpers.typing import ConfigType
 from .const import (
     ATTR_TASK,
     CARD_URL,
+    FIRMWARE_URL,
     CONF_TOPIC_PREFIX,
     DEFAULT_TOPIC_PREFIX,
     DOMAIN,
@@ -36,7 +37,7 @@ from .manager import TaskPadManager
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.TODO, Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.TODO, Platform.BINARY_SENSOR, Platform.UPDATE]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 TASK_REF_SCHEMA = vol.Schema({vol.Required(ATTR_TASK): cv.string})
@@ -120,7 +121,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 CARD_URL,
                 str(Path(__file__).parent / "frontend" / "taskpad-card.js"),
                 cache_headers=False,
-            )
+            ),
+            StaticPathConfig(
+                FIRMWARE_URL,
+                str(Path(__file__).parent / "firmware" / "taskpad.bin"),
+                cache_headers=False,
+            ),
         ]
     )
     await _async_ensure_lovelace_resource(hass)

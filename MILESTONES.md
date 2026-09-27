@@ -104,13 +104,19 @@ fail-fast retry on mistyped credentials). Wi-Fi passwords must be
 typed on the phone: mobile OSes expose stored Wi-Fi credentials to
 no app, so no provisioning flow can prefill them.
 
-## M5 — OTA updates
+## M5 — OTA updates (done, 2026-09-27)
 
-- [ ] Partition relayout: two OTA app slots (verify headroom for the
+- [x] Partition relayout: two OTA app slots (verify headroom for the
       ~1.4MB image within 4MB flash)
-- [ ] Firmware: `esp_https_ota` pull, rollback on failed boot
-- [ ] Integration: `update` entity on the device page serving/pointing to
+- [x] Firmware: `esp_https_ota` pull, rollback on failed boot
+- [x] Integration: `update` entity on the device page serving/pointing to
       firmware binaries
+
+Note: verified with a live 0.8.0 -> 0.8.1 update installed from the
+HA device page. Slot headroom is 14% at the current 1.75MB image;
+budget flash before adding large features. Release ritual:
+idf.py build -> scripts/release_firmware.sh -> copy firmware/* to
+the HA share -> Install in HA.
 
 ## M6 — Stretch
 

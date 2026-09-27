@@ -18,7 +18,7 @@
 #define LCD_DRAW_BUF_LINES 24 // kept modest: RAM shared with Wi-Fi + BLE
 
 #define HEADER_H 44
-#define STATUS_H 26
+#define STATUS_H 42 // two wrapped lines of the status font
 
 static lv_obj_t *s_list;
 static lv_obj_t *s_status_label;
@@ -135,6 +135,8 @@ static void build_screen(void)
 
     s_status_label = lv_label_create(scr);
     lv_label_set_text(s_status_label, "");
+    lv_obj_set_width(s_status_label, LCD_H_RES - 16); // wrap long messages
+    lv_obj_set_style_text_align(s_status_label, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_font(s_status_label, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(s_status_label, lv_color_hex(0x78909C), 0);
     lv_obj_align(s_status_label, LV_ALIGN_BOTTOM_MID, 0, -6);

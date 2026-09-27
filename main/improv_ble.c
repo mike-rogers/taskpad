@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 
@@ -307,6 +308,11 @@ void improv_ble_start(const char *device_name, improv_connect_cb_t cb)
     s_connect_cb = cb;
     s_provisioned = xSemaphoreCreateBinary();
 
+    ESP_LOGI(TAG, "heap before BLE: free=%u largest=%u",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL |
+                                               MALLOC_CAP_8BIT),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL |
+                                                        MALLOC_CAP_8BIT));
     ESP_ERROR_CHECK(nimble_port_init());
     ble_hs_cfg.sync_cb = on_sync;
     ble_svc_gap_init();

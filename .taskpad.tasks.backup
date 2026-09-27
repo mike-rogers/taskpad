@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "taskpad.tasks",
+  "data": {
+    "items": [
+      {
+        "uid": "7582127c-7e3c-45be-85f8-498e1d3f361d",
+        "summary": "Dog flea medicine",
+        "status": "completed",
+        "due": "2026-09-29",
+        "description": "interval: 1m",
+        "interval_days": 30,
+        "created_at": "2026-09-24T14:55:50.212121-04:00",
+        "completed_at": "2026-09-24T14:57:15.247769-04:00"
+      },
+      {
+        "uid": "d47cd241-299a-47fa-b018-9362c6638509",
+        "summary": "Change furnace filter",
+        "status": "completed",
+        "due": "2026-09-25",
+        "description": "interval: 1m",
+        "interval_days": 30,
+        "created_at": "2026-09-24T14:55:50.212360-04:00",
+        "completed_at": "2026-09-24T17:26:16.371219-04:00",
+        "blocked": false
+      },
+      {
+        "uid": "08b33aac-96fe-40f9-bd86-36363b7554f1",
+        "summary": "Dog flea medicine",
+        "status": "needs_action",
+        "due": "2026-10-24",
+        "description": "interval: 1m",
+        "interval_days": 30,
+        "created_at": "2026-09-24T14:57:15.248081-04:00",
+        "completed_at": null
+      },
+      {
+        "uid": "16dc6d8b-1126-49fa-81e3-5e697ea89bcd",
+        "summary": "Prep: Change furnace filter",
+        "status": "completed",
+        "due": "2026-09-24",
+        "description": "One-shot prerequisite for: Change furnace filter",
+        "interval_days": null,
+        "one_shot": true,
+        "parent_uid": "d47cd241-299a-47fa-b018-9362c6638509",
+        "created_at": "2026-09-24T17:25:47.572191-04:00",
+        "completed_at": "2026-09-24T17:26:13.791908-04:00"
+      },
+      {
+        "uid": "41a7862a-e6cb-476a-b046-f69d9a5a1e04",
+        "summary": "Change furnace filter",
+        "status": "needs_action",
+        "due": "2026-10-24",
+        "description": "interval: 1m",
+        "interval_days": 30,
+        "created_at": "2026-09-24T17:26:16.371583-04:00",
+        "completed_at": null
+      }
+    ]
+  }
+}

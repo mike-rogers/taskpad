@@ -83,7 +83,11 @@ device disproved the network-filtering theory (the Mac's failures were
 macOS Local Network permission gating) and pointed at the config flow
 reading the removed ZeroconfServiceInfo.host attribute — fixed to
 ip_address. Adoption by IP via Configure -> Adopt device works
-regardless of discovery.
+regardless of discovery. Full fresh-install path (delete entry ->
+discovered card -> adopt) verified end-to-end 2026-09-27; note that HA
+only re-surfaces the discovery after a fresh device announcement, so a
+device reboot may be needed when re-adding. Discovery flows are
+suppressed by design while an entry exists (single_config_entry).
 
 ## M4 — Improv Wi-Fi provisioning (BLE)
 

@@ -58,6 +58,9 @@ void wifi_conn_start(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
     ESP_ERROR_CHECK(esp_wifi_start());
+    // Mains-powered device: disable modem power save. The default doze
+    // drops/delays multicast, which makes mDNS discovery unreliable.
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
 
     xEventGroupWaitBits(s_events, GOT_IP_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
 }

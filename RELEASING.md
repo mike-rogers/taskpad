@@ -11,16 +11,24 @@
    ```
 
 3. CI (`.github/workflows/firmware.yml`) builds against ESP-IDF v6.0 and
-   attaches two assets to the GitHub release:
+   attaches three assets to the GitHub release:
    - `taskpad.bin` — the OTA application image
    - `taskpad-factory.bin` — esptool-merged full-flash image
+   - `taskpad.zip` — the integration **with the matching firmware baked
+     in**; HACS installs this (`zip_release` in `hacs.json`), so HACS
+     users get device updates on the HA device page automatically after
+     updating the integration
 4. The release publish triggers `.github/workflows/pages.yml`, which
    redeploys the project page and browser flasher with the new factory
    image. (The binary is copied into the Pages artifact deliberately:
    GitHub release assets don't send CORS headers, so ESP Web Tools can't
    fetch them cross-origin.)
 
-## Updating your own device (local, no CI)
+## Updating your own device (local dev builds, no CI)
+
+For a HACS-managed install, the normal path is: update TaskPad in HACS →
+restart → Install on the device page. The steps below are for pushing a
+locally built firmware without cutting a release:
 
 1. `idf.py build`
 2. `./scripts/release_firmware.sh` — stages `taskpad.bin` + `version.txt`

@@ -33,6 +33,15 @@ jobs:
             build/taskpad.bin
             build/taskpad-factory.bin
 
+      - name: Package HACS zip (integration + matching firmware)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          mkdir -p custom_components/taskpad/firmware
+          cp build/taskpad.bin custom_components/taskpad/firmware/taskpad.bin
+          sed -n 's/#define TASKPAD_FW_VERSION "\(.*\)"/\1/p' main/fw_version.h \
+            | tr -d '\n' > custom_components/taskpad/firmware/version.txt
+          cd custom_components/taskpad && zip -qr "$GITHUB_WORKSPACE/taskpad.zip" .
+
       - name: Attach release assets
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -40,6 +49,7 @@ jobs:
           files: |
             build/taskpad.bin
             build/taskpad-factory.bin
+            taskpad.zip
 
       # A release published with GITHUB_TOKEN cannot trigger the Pages
       # workflow's `release` event (anti-recursion rule); dispatch it.

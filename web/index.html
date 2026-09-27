@@ -95,9 +95,14 @@
 
   <h2>Home Assistant integration</h2>
   <ol>
-    <li>HACS → three-dot menu → <em>Custom repositories</em> → add
-        <code>https://github.com/mike-rogers/taskpad</code> (type: Integration)
-        → install → restart HA.</li>
+    <li>No HACS yet? <a href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fhacs%2Faddons">add
+        the official HACS add-on repository</a>, install and run the
+        <em>Get HACS</em> add-on once, restart HA, then add the HACS
+        integration (it walks you through a GitHub sign-in code).</li>
+    <li><a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=mike-rogers&amp;repository=taskpad&amp;category=integration">Add
+        TaskPad as a HACS custom repository</a> → Download → restart HA.
+        The package ships with its matching firmware, so device updates
+        appear on the HA device page after each TaskPad update.</li>
     <li>Requires the Mosquitto broker add-on (or any MQTT broker HA is
         connected to) and a broker login for the device.</li>
     <li>Settings → Devices &amp; Services: TaskPad appears as a discovered

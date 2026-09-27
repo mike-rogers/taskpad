@@ -15,7 +15,7 @@
 #define LCD_V_RES 320
 #define LCD_SPI_HOST SPI2_HOST
 #define LCD_PIXEL_CLOCK_HZ (40 * 1000 * 1000)
-#define LCD_DRAW_BUF_LINES 40
+#define LCD_DRAW_BUF_LINES 24 // kept modest: RAM shared with Wi-Fi + BLE
 
 #define HEADER_H 44
 #define STATUS_H 26

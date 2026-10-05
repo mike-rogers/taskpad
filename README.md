@@ -18,7 +18,8 @@ Hardware:
 
 - SparkFun Pro Micro ESP32-C3
 - 2.8" 240x320 ST7789 TFT (SPI)
-- Two momentary buttons for now; Adafruit ANO rotary encoder (I2C) later
+- Two momentary buttons, and optionally the Adafruit ANO rotary encoder on
+  its I2C seesaw adapter (product 5740)
 
 ## Wiring (defaults, changeable in menuconfig)
 
@@ -37,6 +38,17 @@ Hardware:
 |-----------------|-------------------------|
 | Done (complete) | 1 → button → GND        |
 | Down (select)   | 9 (onboard BOOT button) |
+
+| ANO adapter (STEMMA QT) | ESP32-C3 GPIO |
+|-------------------------|---------------|
+| VIN (red)               | 3V3           |
+| GND (black)             | GND           |
+| SDA (blue)              | 0             |
+| SCL (yellow)            | 2             |
+
+The encoder is detected at boot; without it the device runs on the two
+buttons alone. Wheel and up/down move the selection, center press
+completes, center long-press marks blocked.
 
 ## Home Assistant setup
 

@@ -7,6 +7,7 @@ idf_component_register(SRCS "main.c"
                             "ota_update.c"
                             "ui.c"
                             "input.c"
+                            "ano_seesaw.c"
                        PRIV_REQUIRES esp_wifi
                                      nvs_flash
                                      esp_http_server
@@ -16,6 +17,7 @@ idf_component_register(SRCS "main.c"
                                      esp_lcd
                                      esp_driver_spi
                                      esp_driver_gpio
+                                     esp_driver_i2c
                                      esp_netif
                                      lwip
                        INCLUDE_DIRS ".")

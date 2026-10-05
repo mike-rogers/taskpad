@@ -131,7 +131,7 @@ void app_main(void)
         }
     }
 
-    QueueHandle_t queue = xQueueCreate(8, sizeof(app_event_t));
+    QueueHandle_t queue = xQueueCreate(16, sizeof(app_event_t));
     input_init(queue);
 
     ui_set_status("Connecting to MQTT...");
@@ -148,6 +148,13 @@ void app_main(void)
         case APP_EVT_BTN_DOWN:
             if (s_count > 0) {
                 s_selected = (s_selected + 1) % s_count;
+                ui_show_tasks(s_tasks, s_count, s_selected);
+            }
+            break;
+
+        case APP_EVT_BTN_UP:
+            if (s_count > 0) {
+                s_selected = (s_selected + s_count - 1) % s_count;
                 ui_show_tasks(s_tasks, s_count, s_selected);
             }
             break;

@@ -120,8 +120,11 @@ the HA share -> Install in HA.
 
 ## M6 — Stretch
 
-- [ ] Adafruit ANO rotary encoder input backend (I2C seesaw) behind the
-      existing input abstraction
+- [x] Adafruit ANO rotary encoder input backend (I2C seesaw) behind the
+      existing input abstraction (done 2026-10-05: detected at boot on
+      SDA=GPIO0/SCL=GPIO2, wheel + up/down move the selection, center
+      press/long-press = Done/blocked; GPIO buttons still work; verified
+      on hardware; app slot headroom now 10%)
 - [x] HACS packaging and publication (done 2026-09-27:
       github.com/mike-rogers/taskpad, MIT; CI builds firmware and
       publishes releases; browser flasher + project page at

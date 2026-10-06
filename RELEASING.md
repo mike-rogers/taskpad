@@ -56,7 +56,7 @@ locally built firmware without cutting a release:
   compares the device's reported version (retained `taskpad/status`)
   against `firmware/version.txt`, and only offers an update when the
   served `taskpad.bin` actually exists next to it.
-- The OTA slots are 1984KB each and the image is ~1.75MB (~14% headroom).
+- The OTA slots are 1984KB each and the image is ~1.8MB (~10% headroom).
   Budget flash before adding large components.
 - A commit that shouldn't trigger the firmware CI can include `[skip ci]`
   in its message.

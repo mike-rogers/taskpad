@@ -81,12 +81,16 @@ bool ano_seesaw_init(int sda_pin, int scl_pin)
         .flags.enable_internal_pullup = true,
     };
     i2c_master_bus_handle_t bus;
-    if (i2c_new_master_bus(&bus_cfg, &bus) != ESP_OK) {
-        ESP_LOGW(TAG, "I2C bus init failed");
+    esp_err_t err = i2c_new_master_bus(&bus_cfg, &bus);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "I2C bus init failed: %s", esp_err_to_name(err));
         return false;
     }
-    if (i2c_master_probe(bus, ANO_ADDR, I2C_TIMEOUT_MS) != ESP_OK) {
-        ESP_LOGI(TAG, "no ANO encoder at 0x%02x; buttons only", ANO_ADDR);
+    err = i2c_master_probe(bus, ANO_ADDR, I2C_TIMEOUT_MS);
+    if (err != ESP_OK) {
+        // NOT_FOUND = nothing acked; TIMEOUT = a line is stuck (shorted).
+        ESP_LOGI(TAG, "no ANO encoder at 0x%02x (%s); buttons only",
+                 ANO_ADDR, esp_err_to_name(err));
         i2c_del_master_bus(bus);
         return false;
     }
@@ -100,11 +104,20 @@ bool ano_seesaw_init(int sda_pin, int scl_pin)
 
     uint8_t rst = 0xFF;
     ss_write(SS_STATUS, SS_STATUS_SWRST, &rst, 1);
-    vTaskDelay(pdMS_TO_TICKS(50));
 
+    // The seesaw takes a variable time to come back from reset, so poll
+    // for it rather than trusting a fixed delay.
     uint32_t version = 0;
-    if (ss_read_u32(SS_STATUS, SS_STATUS_VERSION, &version) != ESP_OK) {
-        ESP_LOGW(TAG, "ANO encoder not responding after reset");
+    for (int attempt = 0; attempt < 20; attempt++) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+        err = ss_read_u32(SS_STATUS, SS_STATUS_VERSION, &version);
+        if (err == ESP_OK) {
+            break;
+        }
+    }
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "ANO encoder not responding after reset (%s)",
+                 esp_err_to_name(err));
         return false;
     }
     // The upper half of the version register is the Adafruit product id.
